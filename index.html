@@ -295,6 +295,26 @@
             fill: currentColor;
         }
 
+/* Specific fix for Safari/iOS time inputs */
+input[type="time"] {
+    -webkit-appearance: none; /* Removes default iOS styling */
+    min-height: 40px;         /* Ensures a consistent tap target */
+    background-color: #0f172a;
+    color-scheme: dark;       /* Makes the internal iOS picker dark mode */
+    font-size: 16px;          /* Prevents iOS from auto-zooming the screen */
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Fixes misalignment where the box might be slightly taller than text inputs */
+input[type="time"], input[type="text"], select {
+    vertical-align: middle;
+    margin: 0 0 8px 0;
+    line-height: normal;
+}
+
+
     </style>
 </head>
 <body>
