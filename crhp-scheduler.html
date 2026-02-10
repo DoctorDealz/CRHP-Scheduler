@@ -462,6 +462,34 @@
 	
     const MASTER_TEMPLATE = `{"tasks":[{"day":1,"start":"09:00","end":"09:30","name":"Reconciliation Witness","desc":"Jacob gives reconciliation witness.","people":["Jacob (Facilities leader)"],"type":"main","complete":false,"pending":false},{"day":1,"start":"08:30","end":"09:00","name":"Breakfast","desc":"Breakfast and fellowship","people":[],"type":"main","pending":false,"complete":false,"room":""},{"day":1,"start":"08:45","end":"09:00","name":"Pray with witness","desc":"Thomas pray with Jacob in chapel","people":["Jacob (Facilities leader)","Thomas (Formation leader)"],"type":"bg","pending":false,"complete":false,"room":"Chapel"},{"day":1,"start":"08:30","end":"09:30","name":"Sacristan duties","desc":"Jonathan has to pick up priest","people":["Jonathan (Sacristan)"],"type":"bg","complete":false,"pending":false,"room":"Chapel"},{"day":1,"start":"10:00","end":"10:05","name":"Break","desc":"Get up, bathroom, snacks, water","people":["Jacob (Facilities leader)","Jonathan (Sacristan)","Thomas (Formation leader)"],"type":"main","pending":false,"complete":false,"room":"Any"},{"day":1,"start":"22:00","end":"23:59","name":"Now line tester","desc":"","people":[],"type":"main","room":"","pending":false,"complete":false}],"checklist":[{"name":"Test bro","desc":"Yo ","people":["Jacob (Facilities leader)"],"done":false,"pending":false}],"roster":[{"name":"Jacob","role":"Facilities leader"},{"name":"Jonathan","role":"Sacristan"},{"name":"Thomas","role":"Formation leader"}],"rooms":["Chapel","Any"],"totalDays":1}`;
 
+	
+    // 1. Initial attempt to load from storage
+    let rawTasks = localStorage.getItem('v50_tasks');
+    let rawRoster = localStorage.getItem('v50_roster');
+    let rawRooms = localStorage.getItem('v50_rooms');
+
+    // 2. The Logic: If there's no roster OR no tasks, load the Master Template
+    if (!rawRoster || !rawTasks || !rawRooms) {
+        console.log("No saved data found. Loading Master Template...");
+        const data = JSON.parse(MASTER_TEMPLATE);
+        
+        tasks = data.tasks;
+        checklist = data.checklist;
+        roster = data.roster;
+        rooms = data.rooms;
+        totalDays = data.totalDays || 1;
+        
+        // Save immediately so the next refresh sees the data
+        saveAll();
+    } else {
+        // 3. Data exists! Parse it into our active variables
+        tasks = JSON.parse(rawTasks);
+        checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
+        roster = JSON.parse(rawRoster);
+        rooms = JSON.parse(rawRooms);
+        totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
+    }
+	
     const saveAll = () => { 
         localStorage.setItem('v50_tasks', JSON.stringify(tasks)); 
         localStorage.setItem('v50_checklist', JSON.stringify(checklist));
