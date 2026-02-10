@@ -1196,6 +1196,23 @@
         }
     }
 
+    function initApp() {
+        console.log("DOM fully loaded. Initializing UI...");
+        renderRooms();
+        renderRosterCheckboxes();
+        renderDays();
+        
+        // This ensures the timeline or checklist shows up immediately
+        if (isChecklistMode) {
+            renderChecklist();
+        } else {
+            renderTasks();
+        }
+    }	
+
+	// This tells the browser: "Wait until the HTML is finished, THEN run initApp"
+    window.addEventListener('DOMContentLoaded', initApp);
+
     setInterval(updateNowLine, 30000);
     renderRoster();
 	renderDays();
