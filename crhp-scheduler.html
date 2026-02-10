@@ -1,0 +1,1179 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><meta name='viewport' content='width=device-width, initial-scale=1'/><meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRHP Scheduler</title>
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
+            --bg-task: #a855f7; --text: #f8fafc; --danger: #ef4444;
+            --border: #475569; --now: #ff4747;
+			--room: #fcd34d;
+        }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body.modal-open { overflow: hidden; height: 100vh; }
+
+        .fixed-top { padding: 15px; max-width: 600px; margin: 0 auto; background: var(--bg); }
+        .section-title { font-size: 0.8rem; color: var(--accent); font-weight: bold; margin: 15px 0 5px; text-transform: uppercase; }
+        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; }
+        
+        .btn-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        .btn-ctrl { flex: 1; padding: 12px; font-size: 0.75rem; font-weight: bold; border-radius: 6px; border: 1px solid var(--border); background: #1e293b; color: #cbd5e1; cursor: pointer; }
+
+        .day-container { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .day-btn { position: relative; padding: 8px 32px 8px 16px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: white; cursor: pointer; white-space: nowrap; font-size: 0.8rem; display: flex; align-items: center; }
+        .day-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: bold; }
+        
+        .checklist-toggle { background: #1e293b; border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
+        .checklist-toggle.active { background: var(--accent); color: #0f172a; }
+
+        .day-delete-x { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--danger); font-size: 14px; font-weight: bold; }
+        .day-add { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 16px; box-sizing: border-box; }
+        
+        .roster-grid { display: grid; grid-template-columns: 1fr; gap: 2px; max-height: 180px; overflow-y: auto; background: #0f172a; padding: 4px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px; }
+        .roster-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; background: rgba(255,255,255,0.03); cursor: pointer; }
+        .roster-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+        .roster-item small, #rosterDisplay small { color: var(--accent); font-weight: bold; }
+
+        .scroll-wrapper { 
+            width: 100%; 
+            overflow-x: auto; 
+            border-top: 1px solid var(--border); 
+        }
+
+        .timeline-container { 
+            position: relative; 
+            width: 890px;      /* Your chosen "sweet spot" width */
+            margin: 0 auto;    
+            padding-right: 0; 
+            box-sizing: border-box;
+            background: var(--bg);
+        }
+        
+        .checklist-container { max-width: 600px; margin: 20px auto; padding: 0 15px; display: none; }
+        .check-item { background: var(--card); border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 10px; position: relative; cursor: pointer; padding-right: 20px; }
+        .check-item.is-pending { border: 2px dashed var(--accent) !important; }
+        .check-item.is-complete { opacity: 0.5; background: repeating-linear-gradient(45deg, rgba(30,41,59,1), rgba(30,41,59,1) 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px); }
+        .check-item-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; display: block; padding-right: 65px; }
+        .check-del { position: absolute; top: 12px; right: 15px; color: var(--danger); font-weight: bold; cursor: pointer; z-index: 10; font-size: 18px; }
+        .check-status-row { position: absolute; right: 45px; top: 12px; display: flex; gap: 5px; }
+
+        .main-node.is-pending { border: 2px dashed var(--accent) !important; }
+        .bg-node.is-pending { border: 2px dashed var(--bg-task) !important; }
+        .task-node.is-complete { opacity: 0.5; background: repeating-linear-gradient(45deg, rgba(30,41,59,1), rgba(30,41,59,1) 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px) !important; }
+
+        .status-header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0px; }
+        .status-toggles { display: flex; gap: 3px; background: rgba(0,0,0,0.2); padding: 2px; border-radius: 4px; flex-shrink: 0; }
+        .tiny-toggle { width: 18px; height: 18px; border: 1px solid white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; transition: 0.1s; background: rgba(0,0,0,0.4); color: white; cursor: pointer; }
+        .tiny-toggle.active { background: white; color: black; }
+
+        .v-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); z-index: 40; pointer-events: none; }
+        .l-80 { left: 60px; }
+        .l-430 { left: 410px; }
+        .l-510 { left: 490px; }
+        .l-860 { left: 840px; }
+
+        .lane-header { position: absolute; top: 0; display: flex; z-index: 30; background: var(--bg); height: 35px; align-items: center; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: bold; }
+        .header-main { left: 60px; width: 350px; justify-content: center; color: var(--accent); }
+        .header-bg { left: 490px; width: 350px; justify-content: center; color: var(--bg-task); }
+
+        .time-gutter { 
+            position: absolute; 
+            top: 0; 
+            width: 60px; 
+            bottom: 0; 
+            background: var(--bg); /* Ensure this matches your background color exactly */
+            z-index: 30; /* Higher than both hour-lines and now-line */
+        }
+        .left-gutter { left: 0; }
+        .center-gutter { 
+            left: 410px; /* (60 gutter + 350 main) */
+            width: 80px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 30;
+            background: var(--bg);
+        }
+
+        .hour-mark { 
+            position: absolute; 
+            left: 0;
+            right: 0;
+            width: 100%;
+            text-align: center; /* This centers text inside a full-width block */
+            transform: translateY(-50%); 
+            /* Remove any left: 50% or translate(-50%) if using this method */
+            font-size: 9px; 
+            font-weight: bold; 
+            color: #cbd5e1; 
+        }
+
+		.ultra-compact-text {
+			line-height: 1;
+			display: flex;
+			align-items: center;
+			gap: 4px;
+		}
+		.uc-count { color: var(--accent); font-weight: bold; } /* Assigned amount color */
+		.uc-room { color: var(--room); font-weight: bold; }  /* Room color */
+        
+        .now-time-indicator { 
+            position: absolute; 
+            right: 2px; 
+            color: var(--now); 
+            font-size: 10px; 
+            font-weight: bold; 
+            transform: translateY(-40%); 
+            z-index: 110; 
+            padding: 0px 2px; 
+            background: rgba(15, 23, 42, 0.70); 
+            border-radius: 3px; 
+        }
+        
+        .hour-line { 
+            position: absolute; 
+            left: 60px;  
+            width: 780px; /* (Main 350) + (Center 80) + (BG 350) */
+            height: 1px; 
+            background: rgba(255, 255, 255, 0.12); 
+            pointer-events: none; 
+            z-index: 5; 
+        }
+
+        .hour-line.major { background: rgba(255, 255, 255, 0.3); }
+
+        #nowLine { 
+            position: absolute; 
+            left: 60px;   /* Start after the left gutter */
+            width: 780px; /* Exact width of Main + Center + BG lanes */
+            height: 0px; 
+            background: transparent; 
+            border-top: 2.5px dashed rgba(255, 71, 71, 0.7);
+            z-index: 20;  /* Higher than hour-lines, lower than gutters */
+            pointer-events: none; 
+            display: none; 
+            box-shadow: 0 0 5px rgba(255, 71, 71, 0.8); 
+        }
+
+        .task-node {
+            position: absolute; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.1); border-left: 5px solid; cursor: pointer; z-index: 5;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .main-node { border-left-color: var(--accent); background: #1e2d45; }
+        .bg-node { border-left-color: var(--bg-task); background: #281e45; }
+        
+        .task-title { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; line-height: 1.2; }
+        .task-meta {
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-start;
+			overflow: hidden;
+		}
+        .crew-list { font-size: 8px; opacity: 0.95; line-height: 1.1; margin-top: 2px; }
+		
+		select {
+			font-family: -apple-system, BlinkMacSystemFont, sans-serif; /* Matches body font */
+			font-size: 14px;
+			font-weight: 500;
+			color: var(--text);
+			background-color: #0f172a;
+			border: 1px solid #334155;
+			padding: 10px;
+			border-radius: 6px;
+			appearance: none; /* Removes default browser arrow for a cleaner look */
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2338bdf8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 10px center;
+			background-size: 16px;
+		}
+
+		/* 2. Style the 'No Room Assigned' and other options */
+		select option {
+			font-family: -apple-system, sans-serif;
+			background: #1e293b; /* Matches your card color */
+			color: white;
+		}
+
+		/* 3. Specific fix for the 'No Room Assigned' text specifically */
+		#taskRoom option[value=""], 
+		#editTaskRoom option[value=""] {
+			color: #94a3b8; /* Give the 'No Room' option a slightly muted/grey color */
+			font-style: italic;
+		}
+		
+		.room-label { color: var(--room); font-weight: bold; }
+		.task-title .room-label { margin-left: 5px; font-size: 0.85em; }
+        
+        .main-node .crew-list small, .checklist-container .crew-list small { color: var(--accent); font-weight: bold; }
+        .bg-node .crew-list small { color: var(--bg-task); font-weight: bold; }
+        .assigned-label { font-weight: bold; text-transform: uppercase; font-size: 7px; display: block; }
+        .main-node .assigned-label, .checklist-container .assigned-label { color: var(--accent); }
+        .bg-node .assigned-label { color: var(--bg-task); }
+        
+        .time-range { font-size: 8px; opacity: 0.7; font-weight: bold; line-height: 1; margin-bottom: 2px; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
+        .modal-content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid var(--accent); width: 88%; max-width: 400px; max-height: 85vh; overflow-y: auto; z-index: 10000; }
+        .modal-cancel-x { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .toggle-btn { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: none; color: #94a3b8; font-weight: bold; cursor: pointer; }
+        .toggle-btn.active-main { border-color: var(--accent); color: var(--accent); background: rgba(56, 189, 248, 0.1); }
+        .toggle-btn.active-bg { border-color: var(--bg-task); color: var(--bg-task); background: rgba(168, 85, 247, 0.1); }
+		
+		@media (min-width: 1024px) {
+		body {
+			zoom: 1.7; /* Automates the 170% zoom you've been doing manually */
+			}
+		.fixed-top {
+			max-width: 1000px; /* Wider headers for desktop */
+			}
+		}
+
+        /* Styling for the read-only instructions area */
+        .help-content {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 350px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+        }
+
+        .help-content b { color: var(--accent); }
+        .help-content ul { padding-left: 20px; margin: 10px 0; }
+        .help-content li { margin-bottom: 8px; }
+
+        /* Help Button (Circle) */
+        .btn-help {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Link Button Style */
+        .btn-link {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%; /* Matches the help button shape */
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none; /* Removes underline from <a> tag */
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .btn-link:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Icon sizing */
+        .btn-link svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+    </style>
+</head>
+<body>
+<div class="fixed-top">
+    <div class="btn-row">
+        <button class="btn-ctrl" onclick="exportData()">💾 EXPORT</button>
+        <button class="btn-ctrl" onclick="triggerImport()">📂 IMPORT</button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)" accept=".json">
+
+        <a href="crhp-viewer.html" class="btn-link" target="_blank" title="Open Viewer">
+            <svg viewBox="0 0 24 24"><path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" /></svg>
+        </a>
+
+        <button class="btn-help" onclick="toggleHelp()">?</button>
+    </div>
+    <div class="section-title">1. Team Roster</div>
+    <div class="card">
+        <div style="display:flex; gap:5px;"><input type="text" id="rosName" placeholder="Name"><input type="text" id="rosRole" placeholder="Role"></div>
+        <button onclick="addRoster()" style="width:100%; padding:12px; background:var(--accent); color:#0f172a; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">+ Add Person</button>
+        <div id="rosterDisplay" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+    </div>
+	<div class="section-title">2. Room List</div>
+	<div class="card">
+		<div style="display:flex; gap:5px;"><input type="text" id="roomName" placeholder="Room Name (e.g. Stage A)"></div>
+		<button onclick="addRoom()" style="width:100%; padding:12px; background:var(--room); color:#0f172a; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">+ Add Room</button>
+		<div id="roomDisplay" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+	</div>
+    <div class="day-container">
+        <button id="checkToggle" class="checklist-toggle" onclick="activateChecklist()">📋 Checklist</button>
+        <div id="dayBar" style="display:flex; gap:8px;"></div>
+    </div>
+    <div id="creatorTitle" class="section-title">3. Task Creator</div>
+    <div class="card">
+        <div id="timeInputs" style="display:flex; gap:5px;"><div style="flex:1"><input type="time" id="startTime" value="09:00"></div><div style="flex:1"><input type="time" id="endTime" value="10:00"></div></div>
+        <input type="text" id="taskName" placeholder="Task Name">
+        <textarea id="taskDesc" placeholder="Description" style="height:50px;"></textarea>
+        <div id="laneToggle" class="toggle-group" style="display:flex; gap:5px; margin-bottom:10px;"><button id="tMain" class="toggle-btn" onclick="setMode('main')">Main</button><button id="tBg" class="toggle-btn" onclick="setMode('bg')">Background</button></div>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <select id="taskRoom" style="flex:1; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;">
+                <option value="">No Room Assigned</option>
+            </select>
+            <button class="btn-ctrl" style="padding:0 12px;" onclick="openQuickRoomEdit('taskRoom')">⚙️</button>
+        </div>
+        
+		<div id="rosterCheckboxes" class="roster-grid"></div>
+        <button onclick="addTask()" style="width:100%; padding:14px; background:var(--accent); color:#0f172a; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">ADD TASK</button>
+    </div>
+</div>
+
+<div class="scroll-wrapper" id="timelineView">
+    <div class="timeline-container" id="timelineArea">
+        <div id="nowLine"></div>
+        <div class="lane-header header-main">MAIN LANE</div>
+        <div class="lane-header header-bg">BACKGROUND LANE</div>
+        <div class="v-line l-80"></div><div class="v-line l-430"></div>
+        <div class="v-line l-510"></div><div class="v-line l-860"></div>
+        <div class="time-gutter left-gutter" id="leftGutter"></div>
+        <div class="time-gutter center-gutter" id="centerGutter"></div>
+        <div id="nodes"></div>
+    </div>
+</div>
+
+<div class="checklist-container" id="checklistView">
+    <div class="section-title">Checklist</div>
+    <div id="checklistItems"></div>
+</div>
+
+<div id="taskModal" class="modal-overlay" onclick="closeModal(false)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-cancel-x" onclick="closeModal(false)">✕</button>
+        <h2 id="modalHeader" style="color:var(--accent); font-size: 1.2rem;">Edit</h2>
+        <input type="text" id="editTaskName">
+        <div id="modalLaneSection">
+            <div class="section-title">Switch Lane</div>
+            <div class="toggle-group" style="display:flex; gap:5px;"><button id="modalTMain" class="toggle-btn" onclick="setEditMode('main')">Main</button><button id="modalTBg" class="toggle-btn" onclick="setEditMode('bg')">Background</button></div>
+        </div>
+        <div id="modalTimeSection" style="display:flex; gap:5px; margin-top:10px;"><input type="time" id="editStartTime"><input type="time" id="editEndTime"></div>
+        <div class="section-title">Status</div>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="modalPendingEdit" onchange="if(this.checked) document.getElementById('modalCompleteEdit').checked=false"> Pending</label>
+            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="modalCompleteEdit" onchange="if(this.checked) document.getElementById('modalPendingEdit').checked=false"> Complete</label>
+        </div>
+        <div class="section-title">Assigned Room</div>
+        <div style="display:flex; gap:8px;">
+            <select id="editTaskRoom" style="flex:1; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;"></select>
+            <button class="btn-ctrl" style="padding:0 12px;" onclick="openQuickRoomEdit('editTaskRoom')">⚙️</button>
+        </div>
+        <div class="section-title">Task Description</div>
+        <textarea id="modalDescEdit" placeholder="Description" oninput="autoSize(this)"></textarea>
+        <div class="section-title">Assigned Crew</div>
+        <div id="modalRosterGrid" class="roster-grid"></div>
+        <button class="btn-ctrl" style="background:var(--danger); color:white; width:100%; margin-bottom:10px;" onclick="deleteCurrentTask()">🗑 Delete</button>
+        <button class="btn-ctrl" style="width:100%; background:var(--accent); color:#0f172a;" onclick="closeModal(true)">Save Changes</button>
+    </div>
+</div>
+
+<div id="rosterEditModal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="modal-cancel-x" onclick="closeRosterModal()">×</button>
+        <h3 style="color:var(--accent); margin-top:0;">Edit Personnel</h3>
+        
+        <label style="font-size: 0.8rem; color: #94a3b8;">Name</label>
+        <input type="text" id="editRosterName" class="modal-input" style="margin-bottom:15px;">
+        
+        <label style="font-size: 0.8rem; color: #94a3b8;">Role</label>
+        <input type="text" id="editRosterRole" class="modal-input" style="margin-bottom:20px;">
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-ctrl" style="flex:2; border-color:var(--accent); color:var(--accent);" onclick="saveRosterEdit()">Save Changes</button>
+            <button class="btn-ctrl" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="triggerRosterDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="roomEditModal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="modal-cancel-x" onclick="closeRoomModal()">✕</button>
+        <h3 style="color:var(--room); margin-top:0;">Edit Room</h3>
+        
+        <label style="font-size: 0.75rem; opacity: 0.7;">Room Name</label>
+        <input type="text" id="editRoomNameInput" class="modal-input" style="width:100%; margin-bottom:20px; background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; border-radius: 6px;">
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-ctrl" style="flex:2; border-color:var(--accent); color:var(--accent);" onclick="saveRoomEdit()">Save Changes</button>
+            <button class="btn-ctrl" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="triggerRoomDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="helpModal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="modal-cancel-x" onclick="toggleHelp()">×</button>
+        <h3 style="color:var(--accent); margin-top:0; border-bottom:1px solid #334155; padding-bottom:10px;">User Guide</h3>
+        
+        <div class="help-content">
+            <b>Main Lane:</b> Primary schedule tasks (Blue).<br>
+            <b>Background Lane:</b> Secondary/support tasks (Purple).<br>
+            <hr style="border:0; border-top:1px solid #334155; margin:10px 0;">
+            <ul>
+                <li><b>Add Task:</b> Click the '+' in the task creator.</li>
+                <li><b>Edit:</b> Tap any task to change crew or details.</li>
+                <li><b>Now Line:</b> The dashed red line shows the current time.</li>
+                <li><b>Checklist:</b> Toggle mode to view tasks as a simple list.</li>
+            </ul>
+            
+            <hr style="border:0; border-top:1px solid var(--danger); margin:15px 0; opacity:0.3;">
+            <p style="color:var(--danger); font-size:0.75rem; margin-bottom:10px; font-weight:bold; text-transform:uppercase;">Admin Tools</p>
+            <button class="btn-ctrl" style="border-color:var(--danger); color:var(--danger); width:100%; margin-bottom:15px;" onclick="resetToMaster()">
+                Reset to Master Template
+            </button>
+
+            <p style="font-size:0.75rem; opacity:0.7; font-style:italic;">Note: Use Export to save your data before clearing the cache.</p>
+        </div>
+        <button class="btn-ctrl" style="width:100%; margin-top:20px;" onclick="toggleHelp()">Close</button>
+    </div>
+</div>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem('v50_tasks')) || [];
+    let checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
+    let roster = JSON.parse(localStorage.getItem('v50_roster')) || [];
+    let totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
+    let currentDay = 1, mode = 'main', editMode = 'main', activeTaskIndex = null, isChecklistMode = false, cachedDStart = 0;
+	let rooms = JSON.parse(localStorage.getItem('v50_rooms')) || [];
+	
+    const MASTER_TEMPLATE = `{"tasks":[{"day":1,"start":"09:00","end":"09:30","name":"Reconciliation Witness","desc":"Jacob gives reconciliation witness.","people":["Jacob (Facilities leader)"],"type":"main","complete":false,"pending":false},{"day":1,"start":"08:30","end":"09:00","name":"Breakfast","desc":"Breakfast and fellowship","people":[],"type":"main","pending":false,"complete":false,"room":""},{"day":1,"start":"08:45","end":"09:00","name":"Pray with witness","desc":"Thomas pray with Jacob in chapel","people":["Jacob (Facilities leader)","Thomas (Formation leader)"],"type":"bg","pending":false,"complete":false,"room":"Chapel"},{"day":1,"start":"08:30","end":"09:30","name":"Sacristan duties","desc":"Jonathan has to pick up priest","people":["Jonathan (Sacristan)"],"type":"bg","complete":false,"pending":false,"room":"Chapel"},{"day":1,"start":"10:00","end":"10:05","name":"Break","desc":"Get up, bathroom, snacks, water","people":["Jacob (Facilities leader)","Jonathan (Sacristan)","Thomas (Formation leader)"],"type":"main","pending":false,"complete":false,"room":"Any"},{"day":1,"start":"22:00","end":"23:59","name":"Now line tester","desc":"","people":[],"type":"main","room":"","pending":false,"complete":false}],"checklist":[{"name":"Test bro","desc":"Yo ","people":["Jacob (Facilities leader)"],"done":false,"pending":false}],"roster":[{"name":"Jacob","role":"Facilities leader"},{"name":"Jonathan","role":"Sacristan"},{"name":"Thomas","role":"Formation leader"}],"rooms":["Chapel","Any"],"totalDays":1}`;
+
+    const saveAll = () => { 
+        localStorage.setItem('v50_tasks', JSON.stringify(tasks)); 
+        localStorage.setItem('v50_checklist', JSON.stringify(checklist));
+        localStorage.setItem('v50_roster', JSON.stringify(roster)); 
+        localStorage.setItem('v50_days', totalDays);
+		localStorage.setItem('v50_rooms', JSON.stringify(rooms));
+    };
+
+    function activateChecklist() { isChecklistMode = true; updateViewToggles(); renderDays(); renderChecklist(); }
+    function activateDay(day) { isChecklistMode = false; currentDay = day; updateViewToggles(); renderDays(); renderTasks(); }
+
+    function updateNowLine() {
+        if(isChecklistMode) return;
+        const line = document.getElementById('nowLine');
+        const now = new Date();
+        const nowMins = (now.getHours() * 60) + now.getMinutes();
+        const pos = (nowMins - cachedDStart) * 3 + 35;
+        
+        document.querySelectorAll('.now-time-indicator').forEach(el => el.remove());
+
+        if (pos > 35 && pos < document.getElementById('timelineArea').offsetHeight) {
+            line.style.top = pos + 'px'; 
+            line.style.display = 'block';
+            
+            const timeStr = formatTo12h(`${now.getHours()}:${now.getMinutes()}`);
+            const indicatorHtml = `<div class="now-time-indicator" style="top:${pos}px">${timeStr}</div>`;
+            document.getElementById('leftGutter').insertAdjacentHTML('beforeend', indicatorHtml);
+            document.getElementById('centerGutter').insertAdjacentHTML('beforeend', indicatorHtml);
+        } else { 
+            line.style.display = 'none'; 
+        }
+    }
+
+    function toggleStatus(index, type, event) {
+        event.stopPropagation();
+        const t = tasks[index];
+        if (type === 'P') { t.pending = !t.pending; if(t.pending) t.complete = false; }
+        if (type === 'C') { t.complete = !t.complete; if(t.complete) t.pending = false; }
+        saveAll(); renderTasks();
+    }
+
+    function toggleCheckStatus(index, type, event) {
+        event.stopPropagation();
+        const item = checklist[index];
+        if (type === 'P') { item.pending = !item.pending; if(item.pending) item.done = false; }
+        if (type === 'C') { item.done = !item.done; if(item.done) item.pending = false; }
+        saveAll(); renderChecklist();
+    }
+
+    function updateViewToggles() {
+        const timeline = document.getElementById('timelineView'), checkView = document.getElementById('checklistView');
+        const timeInputs = document.getElementById('timeInputs'), laneToggle = document.getElementById('laneToggle');
+        const creatorTitle = document.getElementById('creatorTitle'), btn = document.getElementById('checkToggle');
+        if(isChecklistMode) {
+            timeline.style.display = 'none'; checkView.style.display = 'block'; timeInputs.style.display = 'none';
+            laneToggle.style.display = 'none'; creatorTitle.innerHTML = '2. Task Creator (Global Checklist)'; btn.classList.add('active');
+        } else {
+            timeline.style.display = 'block'; checkView.style.display = 'none'; timeInputs.style.display = 'flex';
+            laneToggle.style.display = 'flex'; creatorTitle.innerHTML = `2. Task Creator (Day ${currentDay})`; btn.classList.remove('active');
+        }
+    }
+
+    function renderChecklist() {
+        const container = document.getElementById('checklistItems');
+        container.innerHTML = checklist.map((item, i) => {
+            const crewFormatted = item.people.map(p => {
+                const parts = p.split(' (');
+                return `${parts[0]} <small>(${parts[1]}</small>`;
+            }).join(', ');
+            return `
+            <div class="check-item ${item.pending ? 'is-pending' : ''} ${item.done ? 'is-complete' : ''}" onclick="openModal(${i}, true)">
+                <span class="check-del" onclick="event.stopPropagation(); deleteCheckItem(${i})">✕</span>
+                <div class="check-status-row">
+                    <div class="tiny-toggle ${item.pending ? 'active' : ''}" onclick="toggleCheckStatus(${i}, 'P', event)">P</div>
+                    <div class="tiny-toggle ${item.done ? 'active' : ''}" onclick="toggleCheckStatus(${i}, 'C', event)">C</div>
+                </div>
+                <span class="check-item-title">${item.name}</span>
+                <div class="check-item-desc" style="font-size:0.9rem; margin-bottom:8px; opacity:0.8;">${item.desc}</div>
+                <div class="crew-list">${item.people.length > 0 ? '<span class="assigned-label">Assigned:</span> ' + crewFormatted : ''}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function openModal(index, fromChecklist = false) {
+        activeTaskIndex = index; document.body.classList.add('modal-open');
+        const t = fromChecklist ? checklist[index] : tasks[index];
+        document.getElementById('modalHeader').innerText = fromChecklist ? "Edit Checklist Item" : "Edit Task";
+        document.getElementById('editTaskName').value = t.name;
+        document.getElementById('modalDescEdit').value = t.desc || "";
+        document.getElementById('modalPendingEdit').checked = t.pending || false;
+        document.getElementById('modalCompleteEdit').checked = (fromChecklist ? t.done : t.complete) || false;
+        
+        if(fromChecklist) {
+            document.getElementById('modalLaneSection').style.display = 'none';
+            document.getElementById('modalTimeSection').style.display = 'none';
+        } else {
+            document.getElementById('modalLaneSection').style.display = 'block';
+            document.getElementById('modalTimeSection').style.display = 'flex';
+            document.getElementById('editStartTime').value = t.start;
+            document.getElementById('editEndTime').value = t.end;
+            
+            if(document.getElementById('editTaskRoom')) {
+                document.getElementById('editTaskRoom').value = t.room || "";
+            }
+
+            setEditMode(t.type || 'main');
+        }
+        renderEditRoster(t.people || []); document.getElementById('taskModal').style.display = 'block';
+    }
+
+    function closeModal(save) {
+        if(save) {
+            const isEditingChecklist = document.getElementById('modalHeader').innerText.includes("Checklist");
+            const t = isEditingChecklist ? checklist[activeTaskIndex] : tasks[activeTaskIndex];
+            const name = document.getElementById('editTaskName').value;
+            const desc = document.getElementById('modalDescEdit').value;
+            const crew = Array.from(document.querySelectorAll('#modalRosterGrid input:checked')).map(c => c.value);
+            const pending = document.getElementById('modalPendingEdit').checked;
+            const complete = document.getElementById('modalCompleteEdit').checked;
+            const selectedRoom = document.getElementById('editTaskRoom') ? document.getElementById('editTaskRoom').value : "";
+
+            if(isEditingChecklist) {
+                t.name = name; t.desc = desc; t.people = crew; t.pending = pending; t.done = complete;
+            } else {
+                let s = document.getElementById('editStartTime').value, e = document.getElementById('editEndTime').value;
+                if (e === "00:00") { e = "23:59"; }
+                
+                if(getMins(e) < getMins(s)) {
+                    const originalDay = t.day;
+                    tasks.splice(activeTaskIndex, 1);
+                    tasks.push({ day: originalDay, start: s, end: "23:59", name, desc, people: crew, type: editMode, room: selectedRoom, pending, complete });
+                    if (originalDay === totalDays) { totalDays++; renderDays(); }
+                    tasks.push({ day: originalDay + 1, start: "00:00", end: e, name, desc, people: crew, type: editMode, room: selectedRoom, pending, complete });
+                } else {
+                    t.name = name; t.desc = desc; t.people = crew; t.pending = pending; t.complete = complete;
+                    t.start = s; t.end = e; t.type = editMode; t.room = selectedRoom;
+                }
+            }
+            saveAll(); 
+            isChecklistMode ? renderChecklist() : renderTasks();
+        }
+
+        document.body.classList.remove('modal-open'); 
+        document.getElementById('taskModal').style.display = 'none';
+        
+        if(document.getElementById('editTaskRoom')) {
+            document.getElementById('editTaskRoom').value = "";
+        }
+        
+        document.querySelectorAll('#modalRosterGrid input').forEach(cb => cb.checked = false);
+    }
+
+    function addTask() {
+		const n = document.getElementById('taskName').value, d = document.getElementById('taskDesc').value;
+		const p = Array.from(document.querySelectorAll('#rosterCheckboxes input:checked')).map(c => c.value);
+		const selectedRoom = document.getElementById('taskRoom').value; // Room captured here
+		
+		if(!n) return;
+		if(isChecklistMode) {
+			checklist.push({ name: n, desc: d, people: p, done: false, pending: false });
+		} else {
+			let s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
+			if (e === "00:00") { e = "23:59"; }
+			
+			if(getMins(e) < getMins(s)) {
+				// Task crosses midnight - Day 1
+				tasks.push({ 
+					day: currentDay, start: s, end: "23:59", name: n, desc: d, people: p, type: mode, 
+					room: selectedRoom, 
+					pending: false, complete: false 
+				});
+				if (currentDay === totalDays) { totalDays++; renderDays(); }
+				// Task crosses midnight - Day 2
+				tasks.push({ 
+					day: currentDay + 1, start: "00:00", end: e, name: n, desc: d, people: p, type: mode, 
+					room: selectedRoom, 
+					pending: false, complete: false 
+				});
+			} else {
+				// Standard single day
+				tasks.push({ 
+					day: currentDay, start: s, end: e, name: n, desc: d, people: p, type: mode, 
+					room: selectedRoom, 
+					pending: false, complete: false 
+				});
+			}
+		}
+		saveAll(); 
+		isChecklistMode ? renderChecklist() : renderTasks();
+		document.getElementById('taskName').value = ''; 
+		document.getElementById('taskDesc').value = '';
+		document.getElementById('taskRoom').value = '';
+		document.querySelectorAll('#rosterCheckboxes input').forEach(cb => cb.checked = false);
+		
+	}
+
+    const formatTo12h = (t) => { 
+        if(!t) return ""; 
+        let [h, m] = t.split(':').map(Number); 
+        return `${h % 12 || 12}:${m.toString().padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`; 
+    };
+    const getMins = (t) => { let [h, m] = t.split(':').map(Number); return (h * 60) + m; };
+
+    function renderTasks() {
+        if(isChecklistMode) return;
+        const nodes = document.getElementById('nodes'), area = document.getElementById('timelineArea');
+        nodes.innerHTML = ''; document.getElementById('leftGutter').innerHTML = ''; document.getElementById('centerGutter').innerHTML = '';
+        const dayTasks = tasks.filter(t => t.day === currentDay).sort((a,b) => getMins(a.start) - getMins(b.start));
+        if(!dayTasks.length) { area.style.height = '400px'; cachedDStart = 540; updateNowLine(); return; }
+        
+        const dStart = Math.floor(Math.min(...dayTasks.map(t => getMins(t.start))) / 15) * 15;
+        const dEnd = Math.ceil(Math.max(...dayTasks.map(t => Math.max(getMins(t.start) + 5, getMins(t.end)))) / 15) * 15;
+        cachedDStart = dStart;
+
+        for(let m=dStart; m<=dEnd; m+=15){
+            const pos = (m-dStart)*3 + 35, mins=m%60;
+            const hourStr = Math.floor(m/60)+':'+mins.toString().padStart(2,'0');
+            const lbl = `<div class="hour-mark" style="top:${pos}px">${formatTo12h(hourStr)}</div>`;
+            document.getElementById('leftGutter').innerHTML += lbl; document.getElementById('centerGutter').innerHTML += lbl;
+            nodes.innerHTML += `<div class="hour-line ${mins===0?'major':''}" style="top:${pos}px"></div>`;
+        }
+
+        ['main', 'bg'].forEach(lt => {
+            const ltTasks = dayTasks.filter(t => t.type === lt);
+            const columns = [];
+
+            ltTasks.forEach(t => {
+                const s1 = getMins(t.start);
+                const e1 = Math.max(s1 + 5, getMins(t.end));
+                const overlapping = ltTasks.filter(ot => {
+                    const os = getMins(ot.start);
+                    const oe = Math.max(os + 5, getMins(ot.end));
+                    return (s1 < oe && os < e1);
+                });
+                let maxSimultaneous = 0;
+                for (let time = s1; time < e1; time++) {
+                    const count = overlapping.filter(ot => {
+                        const os = getMins(ot.start);
+                        const oe = Math.max(os + 5, getMins(ot.end));
+                        return time >= os && time < oe;
+                    }).length;
+                    maxSimultaneous = Math.max(maxSimultaneous, count);
+                }
+                let colIndex = 0;
+                while (columns[colIndex] > s1) { colIndex++; }
+                columns[colIndex] = e1;
+
+                const node = document.createElement('div');
+                node.className = `task-node ${lt === 'main'?'main-node':'bg-node'} ${t.pending ? 'is-pending' : ''} ${t.complete ? 'is-complete' : ''}`;
+                const nodeHeight = Math.max(15, (getMins(t.end) - s1) * 3);
+                const laneWidth = 340 / maxSimultaneous;
+                node.style.cssText = `top:${(s1-dStart)*3+35}px; height:${nodeHeight}px; width:${laneWidth-1}px; left:${(lt==='main'?65:495)+(colIndex*laneWidth)}px;`;
+                node.onclick = () => openModal(tasks.indexOf(t), false);
+                
+                const timeRangeStr = `${formatTo12h(t.start)} - ${formatTo12h(t.end)}`;
+                const crewCount = t.people ? t.people.length : 0;
+                const slimNames = t.people ? t.people.map(p => p.split(' (')[0]).join(', ') : '';
+                const fullCrew = t.people ? t.people.map(p => {
+                    const [n, r] = p.split(' ('); return `${n} <small>(${r}</small>`;
+                }).join(', ') : '';
+
+                const showButtons = maxSimultaneous < 3;
+                const statusHtml = showButtons ? `
+                    <div class="status-toggles">
+                        <div class="tiny-toggle ${t.pending ? 'active' : ''}" onclick="toggleStatus(${tasks.indexOf(t)}, 'P', event)">P</div>
+                        <div class="tiny-toggle ${t.complete ? 'active' : ''}" onclick="toggleStatus(${tasks.indexOf(t)}, 'C', event)">C</div>
+                    </div>` : '';
+					
+				const roomText = t.room ? `<span class="room-label">(${t.room})</span>` : "";
+				const roomBlock = t.room ? `<div class="room-label" style="margin-bottom:2px;">${t.room}</div>` : "";
+
+				if (nodeHeight < 40) {
+					// ULTRA COMPACT: Fixed line alignment and custom colors
+					node.innerHTML = `
+						<div class="ultra-compact-text" style="font-size: 8px; font-weight:bold; height: 100%;">
+							<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
+							${t.room ? `<span class="uc-room">[${t.room}]</span>` : ''}
+							<span style="opacity:0.7">(${timeRangeStr})</span>
+							${crewCount > 0 ? `<span class="uc-count">[${crewCount}p]</span>` : ''}
+						</div>`;
+				} else if (nodeHeight < 60) {
+					// MEDIUM: Keep as is
+					node.innerHTML = `
+						<div class="status-header-row">
+							<div class="task-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</div>
+							${statusHtml}
+						</div>
+						<div class="task-meta" style="font-size: 0.75rem;">
+							<div class="crew-list" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+								${t.room ? `<span class="room-label" style="color:var(--room); font-weight:bold;">${t.room}</span> | ` : ''}
+								<span style="opacity:0.8">${timeRangeStr}</span> 
+								${slimNames ? `<span style="opacity:0.4"> | </span>${slimNames}` : ''}
+							</div>
+						</div>`;
+				} else {
+					// LARGE: Push room to its own line to prevent overlap crowding
+					node.innerHTML = `
+						<div class="status-header-row">
+							<div class="task-title" style="margin-bottom:2px;">${t.name}</div>
+							${statusHtml}
+						</div>
+						<div class="task-meta">
+							${roomBlock} <div class="time-range">${timeRangeStr}</div>
+							<div class="crew-list">
+								${nodeHeight < 85 ? slimNames : '<span class="assigned-label">Assigned:</span> ' + fullCrew}
+							</div>
+						</div>`;
+				}
+                nodes.appendChild(node);
+            });
+        });
+        area.style.height = (dEnd-dStart)*3 + 250 + 'px'; updateNowLine();
+    }
+
+    function removePersonFromTasks(personKey) {
+        tasks.forEach(t => { if(t.people) t.people = t.people.filter(p => p !== personKey); });
+        checklist.forEach(i => { if(i.people) i.people = i.people.filter(p => p !== personKey); });
+    }
+
+    let editingRosterIndex = null;
+
+    function openRosterEdit(i) {
+        editingRosterIndex = i;
+        const p = roster[i];
+        document.getElementById('editRosterName').value = p.name;
+        document.getElementById('editRosterRole').value = p.role;
+        document.getElementById('rosterEditModal').style.display = 'block';
+    }
+
+    function closeRosterModal() {
+        document.getElementById('rosterEditModal').style.display = 'none';
+        editingRosterIndex = null;
+    }
+
+    function saveRosterEdit() {
+        const i = editingRosterIndex;
+        const p = roster[i];
+        
+        // This matches the format "Name (Role)"
+        const oldKey = `${p.name} (${p.role})`; 
+        
+        const newName = document.getElementById('editRosterName').value.trim();
+        const newRole = document.getElementById('editRosterRole').value.trim();
+        const newKey = `${newName} (${newRole})`;
+
+        if (!newName) return;
+
+        // 1. Update the tasks array - TARGETING 'people' specifically
+        tasks.forEach(t => {
+            // We check 'people' because that's what your renderTasks function uses
+            if (t.people && Array.isArray(t.people)) {
+                t.people = t.people.map(personString => {
+                    // If the string matches the old Name (Role), replace it
+                    return personString === oldKey ? newKey : personString;
+                });
+            }
+        });
+
+        // 2. Update the roster array so the sidebar/list is current
+        roster[i] = { name: newName, role: newRole };
+
+        if (document.getElementById('taskModal').style.display === 'block') {
+            // 1. Find all checkboxes that are currently checked in the task modal
+            const currentlyChecked = Array.from(document.querySelectorAll('#modalRosterGrid input:checked'))
+                .map(cb => cb.value);
+            
+            // 2. If the person we just edited was checked, update their name in our temporary list
+            const updatedChecked = currentlyChecked.map(val => val === oldKey ? newKey : val);
+            
+            // 3. Redraw the checklist so it shows the new name and keeps the checkmarks
+            renderEditRoster(updatedChecked);
+        }
+
+        // 3. Save and Refresh
+        saveAll();
+        renderRoster(); // Updates your sidebar list
+        renderTasks();  // This will now find the updated names in t.people and redraw the blocks
+        
+        closeRosterModal();
+    }
+
+    // Replaces your old delete function to work via the modal
+    function triggerRosterDelete() {
+        const i = editingRosterIndex;
+        if (confirm(`Are you sure you want to delete ${roster[i].name}?`)) {
+            const key = `${roster[i].name} (${roster[i].role})`;
+            removePersonFromTasks(key);
+            roster.splice(i, 1);
+            saveAll();
+            renderRoster();
+            renderTasks();
+            closeRosterModal();
+        }
+    }
+
+    window.addEventListener('click', (e) => {
+        const rosterModal = document.getElementById('rosterEditModal');
+        const taskModal = document.getElementById('taskModal');
+        const helpModal = document.getElementById('helpModal');
+
+        // If the click target is the overlay itself (not the content box inside)
+        if (e.target === rosterModal) {
+            closeRosterModal();
+        }
+        if (e.target === taskModal) {
+            closeModal(false); // Close without saving
+        }
+        if (e.target === helpModal) {
+            toggleHelp();
+        }
+        if (e.target === document.getElementById('roomEditModal')) {
+            closeRoomModal();
+    }
+    });
+
+    function renderRoster() {
+        // Main Display List
+        document.getElementById('rosterDisplay').innerHTML = roster.map((p, i) => 
+            `<div onclick="openRosterEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer; display:inline-block; margin:2px;">
+                ${p.name} <small>(${p.role})</small> 
+            </div>`
+        ).join('');
+        
+        // Checklist in the Task Modal
+        document.getElementById('rosterCheckboxes').innerHTML = roster.map((p, i) => 
+            `<div class="roster-item" style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="flex:1;" onclick="const ck=this.parentElement.querySelector('input'); ck.checked=!ck.checked; updateTaskCrewFromCheckboxes();">
+                    <input type="checkbox" value="${p.name} (${p.role})" onclick="event.stopPropagation()">
+                    <span>${p.name} <small style="color:var(--accent); font-weight:bold;">(${p.role})</small></span>
+                </div>
+                <span onclick="openRosterEdit(${i})" style="cursor:pointer; padding:0 10px; opacity:0.5;">⚙️</span>
+            </div>`
+        ).join('');
+    }
+
+	function deleteRoom(i) {
+		if(confirm("Delete this room?")) {
+			const deletedRoom = rooms[i];
+			tasks.forEach(t => { if(t.room === deletedRoom) t.room = ""; });
+			rooms.splice(i, 1);
+			saveAll(); renderRooms(); renderTasks();
+		}
+	}
+
+    function openQuickRoomEdit() {
+        const currentRoom = document.getElementById('editTaskRoom').value;
+        if (!currentRoom) {
+            alert("Please select a room to edit, or use the sidebar to manage all rooms.");
+            return;
+        }
+        const roomIndex = rooms.indexOf(currentRoom);
+        if (roomIndex !== -1) openRoomEdit(roomIndex);
+    }
+
+    function renderRooms() {
+        document.getElementById('roomDisplay').innerHTML = rooms.map((r, i) => 
+            `<div onclick="openRoomEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; border:1px solid var(--room); cursor:pointer;">
+                ${r}
+            </div>`
+        ).join('');
+        
+        // Update the dropdowns
+        const options = `<option value="">No Room Assigned</option>` + rooms.map(r => `<option value="${r}">${r}</option>`).join('');
+        document.getElementById('taskRoom').innerHTML = options;
+        document.getElementById('editTaskRoom').innerHTML = options;
+    }
+
+    let editingRoomIndex = null;
+
+    function openRoomEdit(i) {
+        editingRoomIndex = i;
+        const roomName = rooms[i];
+        
+        // Ensure the input exists before setting value
+        const input = document.getElementById('editRoomNameInput');
+        if (input) {
+            input.value = roomName;
+        }
+        
+        document.getElementById('roomEditModal').style.display = 'block';
+    }
+
+    function closeRoomModal() {
+        document.getElementById('roomEditModal').style.display = 'none';
+        editingRoomIndex = null;
+    }
+
+    function saveRoomEdit() {
+        const oldName = rooms[editingRoomIndex];
+        const newName = document.getElementById('editRoomName').value.trim();
+
+        if (!newName) return;
+
+        // 1. Update tasks data
+        tasks.forEach(t => {
+            if (t.room === oldName) t.room = newName;
+        });
+
+        // 2. Update the rooms array
+        rooms[editingRoomIndex] = newName;
+
+        // 3. Sync the UI
+        saveAll();
+        renderRooms(); // This updates the dropdown options
+        renderTasks(); // This updates the labels on the timeline
+        
+        // 4. If Task Modal is open, make sure the dropdown selects the NEW name
+        const editSelect = document.getElementById('editTaskRoom');
+        if (document.getElementById('taskModal').style.display === 'block' && editSelect.value === oldName) {
+            editSelect.value = newName;
+        }
+
+        closeRoomModal();
+    }
+
+    function deleteRoomItem() {
+        const nameToRemove = rooms[editingRoomIndex];
+        if (confirm(`Remove "${nameToRemove}"? Tasks in this room will be set to "No Room".`)) {
+            // Clear room from tasks
+            tasks.forEach(t => {
+                if (t.room === nameToRemove) t.room = "";
+            });
+            
+            rooms.splice(editingRoomIndex, 1);
+            saveAll();
+            renderRooms();
+            renderTasks();
+            closeRoomModal();
+        }
+    }
+
+    function renderDays() {
+        const bar = document.getElementById('dayBar'); bar.innerHTML = '';
+        for(let i=1; i<=totalDays; i++){
+            const d = document.createElement('div'); d.className = `day-btn ${i===currentDay && !isChecklistMode ?'active':''}`;
+            d.onclick = () => activateDay(i); d.innerHTML = `Day ${i} <span class="day-delete-x" onclick="deleteDay(event,${i})">✕</span>`;
+            bar.appendChild(d);
+        }
+        const add = document.createElement('button'); add.className='day-add'; add.innerText='+ Day'; add.onclick=()=>{ totalDays++; activateDay(totalDays); };
+        bar.appendChild(add);
+    }
+    
+    function setMode(m) { mode = m; document.getElementById('tMain').className = `toggle-btn ${m==='main'?'active-main':''}`; document.getElementById('tBg').className = `toggle-btn ${m==='bg'?'active-bg':''}`; }
+    function setEditMode(m) { editMode = m; document.getElementById('modalTMain').className = `toggle-btn ${m==='main'?'active-main':''}`; document.getElementById('modalTBg').className = `toggle-btn ${m==='bg'?'active-bg':''}`; }
+    function autoSize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+    function triggerImport() { document.getElementById('importFile').click(); }
+    function exportData() {
+		const now = new Date();
+
+		// --- ADD THESE 3 LINES ---
+		const dateStr = now.toISOString().split('T')[0]; 
+		const timeStr = now.getHours().toString().padStart(2, '0') + '-' + 
+						now.getMinutes().toString().padStart(2, '0');
+
+		// Include all data categories in the exported object
+		const dataToExport = {
+			tasks: tasks,
+			checklist: checklist,
+			roster: roster,
+			rooms: rooms,
+			totalDays: totalDays
+		};
+		
+		const blob = new Blob([JSON.stringify(dataToExport)], {type:'application/json'});
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(blob);
+
+		// This now uses the variables created above
+		a.download = `schedule_${dateStr}_${timeStr}.json`; 
+		
+		a.click();
+	}
+    
+	function importData(e) {
+		const r = new FileReader();
+		r.onload = (ev) => {
+			try {
+				const d = JSON.parse(ev.target.result);
+				tasks = d.tasks || [];
+				checklist = d.checklist || [];
+				roster = d.roster || [];
+				rooms = d.rooms || []; // Crucial: Import the rooms
+				totalDays = d.totalDays || 1;
+				
+				saveAll();
+				renderRoster();
+				renderRooms(); // Crucial: Show the imported rooms
+				renderDays();
+				renderTasks();
+				alert("Import Successful!");
+			} catch(err) {
+				alert("Error importing file.");
+			}
+		};
+		r.readAsText(e.target.files[0]);
+	}
+
+    
+    function deleteDay(e, n) { 
+        e.stopPropagation(); 
+        if(totalDays === 1) { alert("Cannot delete the only day."); return; } 
+        if(confirm(`Delete Day ${n}?`)){ 
+            tasks = tasks.filter(t=>t.day!==n); 
+            tasks.forEach(t=>{ if(t.day>n) t.day--; }); 
+            totalDays--; 
+            currentDay = 1; 
+            
+            saveAll(); 
+            renderDays(); 
+            renderTasks(); 
+            updateViewToggles(); 
+        } 
+    }
+    function deleteCheckItem(i) { if(confirm("Remove checklist item?")) { checklist.splice(i, 1); saveAll(); renderChecklist(); } }
+
+    function renderEditRoster(assigned) {
+        document.getElementById('modalRosterGrid').innerHTML = roster.map((p, i) => {
+            const k = `${p.name} (${p.role})`;
+            const isChecked = assigned.includes(k) ? 'checked' : '';
+            
+            return `
+                <div class="roster-item" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px;">
+                    <div style="display: flex; align-items: center; flex: 1; cursor: pointer;" onclick="const ck=this.querySelector('input'); ck.checked=!ck.checked;">
+                        <input type="checkbox" value="${k}" ${isChecked} onclick="event.stopPropagation()">
+                        <span style="margin-left: 8px;">${p.name} <small style="color:var(--accent); font-weight:bold;">(${p.role})</small></span>
+                    </div>
+                    <span onclick="event.stopPropagation(); openRosterEdit(${i})" style="cursor: pointer; padding: 0 5px; opacity: 0.6; font-size: 14px;">⚙️</span>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function deleteCurrentTask() { if(confirm("Delete this item?")) { const isCheck = document.getElementById('modalHeader').innerText.includes("Checklist"); if(isCheck) checklist.splice(activeTaskIndex, 1); else tasks.splice(activeTaskIndex, 1); saveAll(); isChecklistMode ? renderChecklist() : renderTasks(); closeModal(false); } }
+
+    function toggleHelp() {
+        const modal = document.getElementById('helpModal');
+        const body = document.body;
+        
+        if (modal.style.display === 'block') {
+            modal.style.display = 'none';
+            body.classList.remove('modal-open');
+        } else {
+            modal.style.display = 'block';
+            body.classList.add('modal-open');
+        }
+    }
+
+    function initApp() {
+        // Check for one of your specific v50 keys
+        const hasData = localStorage.getItem('v50_tasks');
+        
+        if (!hasData || hasData === "null" || hasData === "[]") {
+            console.log("No v50 data found. Loading master retreat template...");
+            
+            try {
+                const data = JSON.parse(MASTER_TEMPLATE);
+                
+                // Assign to your global variables
+                tasks = data.tasks || [];
+                checklist = data.checklist || [];
+                roster = data.roster || [];
+                rooms = data.rooms || [];
+                totalDays = data.days || 1;
+                
+                // Save them into the v50 slots immediately
+                saveAll(); 
+            } catch (e) {
+                console.error("Master Template Parse Error:", e);
+            }
+        } else {
+            // Data exists! Load each piece into its variable
+            tasks = JSON.parse(localStorage.getItem('v50_tasks')) || [];
+            checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
+            roster = JSON.parse(localStorage.getItem('v50_roster')) || [];
+            rooms = JSON.parse(localStorage.getItem('v50_rooms')) || [];
+            totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
+        }
+        
+        // Now that variables are set, draw the UI
+        renderAll(); 
+    }
+
+    function resetToMaster() {
+        if (confirm("Wait! This will delete all names and edits and revert to the master template. Proceed?")) {
+            try {
+                // 1. Parse the master string into an object
+                const data = JSON.parse(MASTER_TEMPLATE);
+                
+                // 2. Unpack it into your specific v50 keys
+                localStorage.setItem('v50_tasks', JSON.stringify(data.tasks || []));
+                localStorage.setItem('v50_checklist', JSON.stringify(data.checklist || []));
+                localStorage.setItem('v50_roster', JSON.stringify(data.roster || []));
+                localStorage.setItem('v50_rooms', JSON.stringify(data.rooms || []));
+                localStorage.setItem('v50_days', data.days || 1); // Save total days count
+                
+                console.log("Master template unpacked and saved successfully.");
+                
+                // 3. Reload to let the app's existing load logic grab the new keys
+                location.reload(); 
+            } catch (e) {
+                console.error("Error with Master Template:", e);
+                alert("Failed to reset: The Master Template string is not formatted correctly.");
+            }
+        }
+    }
+
+    setInterval(updateNowLine, 30000);
+    renderRoster();
+	renderDays();
+	renderTasks();
+	setMode('main');
+	renderRooms();
+</script>
+</body>
+</html>
