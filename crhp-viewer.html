@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule Viewer</title>
+    <title>CRHP Schedule Viewer</title>
     <style>
         :root {
             --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
@@ -355,14 +355,9 @@
         </label>
         <input type="file" id="importFile" style="display:none" onchange="importSchedule(event)">
 
-        <button onclick="if(confirm('Clear all data?')) { 
-            tasks=[]; rooms=[]; roster=[]; checklist=[]; 
-            localStorage.clear(); 
-            saveAll(); 
-            location.reload(); 
-        }" style="flex:1; background:var(--danger); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1.2;">
-            CLEAR ALL DATA
-        </button>
+            <button class="btn-ctrl" style="flex:1; background:var(--danger); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1.2;" onclick="resetToMaster()">
+                Reset to Master Template
+            </button>
         <button class="btn-help" onclick="toggleHelp()">?</button>
     </div>
     <div class="section-title">1. Team Roster</div>
@@ -458,8 +453,22 @@
             </ul>
             <p style="font-size:0.75rem; opacity:0.7; font-style:italic;">Note: Use Export to save your data before clearing the cache.</p>
         </div>
-        
         <button class="btn-ctrl" style="width:100%; margin-top:20px;" onclick="toggleHelp()">Close</button>
+    </div>
+</div>
+
+<div id="rosterEditModal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="modal-cancel-x" onclick="closeRosterModal()">×</button>
+        <h3 style="color:var(--accent); margin-top:0;">Edit Personnel</h3>
+        
+        <input type="text" id="editRosterName" placeholder="Name">
+        <input type="text" id="editRosterRole" placeholder="Role (e.g. Lead, Support)">
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-ctrl" style="flex:1; border-color:var(--accent); color:var(--accent);" onclick="saveRosterEdit()">Save Changes</button>
+            <button class="btn-ctrl" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="deleteRosterItem()">Delete</button>
+        </div>
     </div>
 </div>
 
@@ -471,7 +480,6 @@
     let currentDay = 1, mode = 'main', editMode = 'main', activeTaskIndex = null, isChecklistMode = false, cachedDStart = 0;
 	let rooms = JSON.parse(localStorage.getItem('v50_rooms')) || [];
 	
-
     const saveAll = () => { 
         localStorage.setItem('v50_tasks', JSON.stringify(tasks)); 
         localStorage.setItem('v50_checklist', JSON.stringify(checklist));
@@ -479,6 +487,36 @@
         localStorage.setItem('v50_days', totalDays);
 		localStorage.setItem('v50_rooms', JSON.stringify(rooms));
     };
+
+    const MASTER_TEMPLATE = `{"tasks":[{"day":1,"start":"09:00","end":"09:30","name":"Reconciliation Witness","desc":"Jacob gives reconciliation witness.","people":["Jacob (Facilities leader)"],"type":"main","complete":false,"pending":false},{"day":1,"start":"08:30","end":"09:00","name":"Breakfast","desc":"Breakfast and fellowship","people":[],"type":"main","pending":false,"complete":false,"room":""},{"day":1,"start":"08:45","end":"09:00","name":"Pray with witness","desc":"Thomas pray with Jacob in chapel","people":["Jacob (Facilities leader)","Thomas (Formation leader)"],"type":"bg","pending":false,"complete":false,"room":"Chapel"},{"day":1,"start":"08:30","end":"09:30","name":"Sacristan duties","desc":"Jonathan has to pick up priest","people":["Jonathan (Sacristan)"],"type":"bg","complete":false,"pending":false,"room":"Chapel"},{"day":1,"start":"10:00","end":"10:05","name":"Break","desc":"Get up, bathroom, snacks, water","people":["Jacob (Facilities leader)","Jonathan (Sacristan)","Thomas (Formation leader)"],"type":"main","pending":false,"complete":false,"room":"Any"},{"day":1,"start":"22:00","end":"23:59","name":"Now line tester","desc":"","people":[],"type":"main","room":"","pending":false,"complete":false}],"checklist":[{"name":"Test bro","desc":"Yo ","people":["Jacob (Facilities leader)"],"done":false,"pending":false}],"roster":[{"name":"Jacob","role":"Facilities leader"},{"name":"Jonathan","role":"Sacristan"},{"name":"Thomas","role":"Formation leader"}],"rooms":["Chapel","Any"],"totalDays":1}`;
+
+    
+    // 1. Initial attempt to load from storage
+    let rawTasks = localStorage.getItem('v50_tasks');
+    let rawRoster = localStorage.getItem('v50_roster');
+    let rawRooms = localStorage.getItem('v50_rooms');
+
+    // 2. The Logic: If there's no roster OR no tasks, load the Master Template
+    if (!rawRoster || !rawTasks || !rawRooms) {
+        console.log("No saved data found. Loading Master Template...");
+        const data = JSON.parse(MASTER_TEMPLATE);
+        
+        tasks = data.tasks;
+        checklist = data.checklist;
+        roster = data.roster;
+        rooms = data.rooms;
+        totalDays = data.totalDays || 1;
+        
+        // Save immediately so the next refresh sees the data
+        saveAll();
+    } else {
+        // 3. Data exists! Parse it into our active variables
+        tasks = JSON.parse(rawTasks);
+        checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
+        roster = JSON.parse(rawRoster);
+        rooms = JSON.parse(rawRooms);
+        totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
+    }
 
     function activateChecklist() { isChecklistMode = true; updateViewToggles(); renderDays(); renderChecklist(); }
     function activateDay(day) { isChecklistMode = false; currentDay = day; updateViewToggles(); renderDays(); renderTasks(); }
@@ -982,6 +1020,65 @@
         }
     }
 
+        function initApp() {
+        // Check for one of your specific v50 keys
+        const hasData = localStorage.getItem('v50_tasks');
+        
+        if (!hasData || hasData === "null" || hasData === "[]") {
+            console.log("No v50 data found. Loading master retreat template...");
+            
+            try {
+                const data = JSON.parse(MASTER_TEMPLATE);
+                
+                // Assign to your global variables
+                tasks = data.tasks || [];
+                checklist = data.checklist || [];
+                roster = data.roster || [];
+                rooms = data.rooms || [];
+                totalDays = data.days || 1;
+                
+                // Save them into the v50 slots immediately
+                saveAll(); 
+            } catch (e) {
+                console.error("Master Template Parse Error:", e);
+            }
+        } else {
+            // Data exists! Load each piece into its variable
+            tasks = JSON.parse(localStorage.getItem('v50_tasks')) || [];
+            checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
+            roster = JSON.parse(localStorage.getItem('v50_roster')) || [];
+            rooms = JSON.parse(localStorage.getItem('v50_rooms')) || [];
+            totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
+        }
+        
+        // Now that variables are set, draw the UI
+        renderAll(); 
+    }
+
+    function resetToMaster() {
+        if (confirm("Wait! This will delete all names and edits and revert to the master template. Proceed?")) {
+            try {
+                // 1. Parse the master string into an object
+                const data = JSON.parse(MASTER_TEMPLATE);
+                
+                // 2. Unpack it into your specific v50 keys
+                localStorage.setItem('v50_tasks', JSON.stringify(data.tasks || []));
+                localStorage.setItem('v50_checklist', JSON.stringify(data.checklist || []));
+                localStorage.setItem('v50_roster', JSON.stringify(data.roster || []));
+                localStorage.setItem('v50_rooms', JSON.stringify(data.rooms || []));
+                localStorage.setItem('v50_days', data.days || 1); // Save total days count
+                
+                console.log("Master template unpacked and saved successfully.");
+                
+                // 3. Reload to let the app's existing load logic grab the new keys
+                location.reload(); 
+            } catch (e) {
+                console.error("Error with Master Template:", e);
+                alert("Failed to reset: The Master Template string is not formatted correctly.");
+            }
+        }
+    }
+
     // This is the trigger that actually starts the engine
     window.addEventListener('DOMContentLoaded', () => {
         console.log("DOM Ready. Starting initApp...");
@@ -996,5 +1093,4 @@
 	renderRooms();
 </script>
 </body>
-
 </html>
