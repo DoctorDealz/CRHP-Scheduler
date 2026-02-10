@@ -1137,6 +1137,17 @@
         }
     }
 
+    function renderAll() {
+        renderRooms();
+        renderRoster(); // or renderRosterCheckboxes()
+        renderDays();
+        if (isChecklistMode) {
+            renderChecklist();
+        } else {
+            renderTasks();
+        }
+    }
+
     function initApp() {
         // Check for one of your specific v50 keys
         const hasData = localStorage.getItem('v50_tasks');
