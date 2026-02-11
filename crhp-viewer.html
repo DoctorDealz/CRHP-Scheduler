@@ -413,6 +413,72 @@
             background: rgba(56, 189, 248, 0.1);
         }
 
+        /* Base style for roster pills */
+        .roster-pill {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #334155;
+            background: #1e293b;
+        }
+
+        /* HOVER: Subtle lift, no glow */
+        .roster-pill:hover {
+            background: #2d3748 !important;
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+
+        /* SELECTED (Active Filter): The Glow Effect */
+        .roster-pill.active-filter {
+            background: var(--accent) !important;
+            border-color: #fff;
+            transform: translateY(-2px);
+            /* Neon Glow */
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6), 0 0 5px rgba(255, 255, 255, 0.4);
+        }
+
+        /* SELECTED Text Colors: Ensure legibility during glow */
+        .roster-pill.active-filter strong {
+            color: #0f172a !important; /* Name turns dark */
+        }
+
+        .roster-pill.active-filter small {
+            color: #ffffff !important; /* Role turns white */
+            opacity: 1;
+        }
+
+        /* Normal Text Colors */
+        .roster-pill strong {
+            color: var(--text);
+            transition: color 0.2s;
+        }
+
+        .roster-pill small {
+            color: #94a3b8;
+            margin-left: 6px;
+            font-size: 0.85em;
+            transition: color 0.2s;
+        }
+
+        /* 1. When filter is ON, dim EVERYTHING */
+        #nodes.filter-active .task-node {
+            opacity: 0.1 !important;
+            filter: grayscale(100%);
+            pointer-events: none; /* Make non-matches unclickable */
+            transition: all 0.2s ease;
+        }
+
+        /* 2. BUT if it's a match, force it visible */
+        #nodes.filter-active .task-node.highlight-match {
+            opacity: 1 !important;
+            filter: grayscale(0%) !important;
+            z-index: 1000 !important;
+            box-shadow: 0 0 20px var(--accent);
+            outline: 2px solid white;
+            pointer-events: auto; /* Keep matches clickable */
+            transform: scale(1.02);
+        }
+
     </style>
 </head>
 <body>
@@ -731,15 +797,32 @@
         }
         timeView.innerHTML = fromChecklist ? "" : `<div style="color:var(--accent); font-weight:bold; font-size:0.9rem; margin-bottom:15px;">${formatTo12h(t.start)} - ${formatTo12h(t.end)}</div>`;
 
-        // 5. Clean up Crew (Remove checkboxes and pointers)
-        renderEditRoster(t.people || []);
+        // 5. Clean up Crew (Display ONLY assigned people)
         const grid = document.getElementById('modalRosterGrid');
         if(grid) {
-            grid.style.pointerEvents = 'none';
-            grid.querySelectorAll('input').forEach(i => i.style.display = 'none');
-            grid.querySelectorAll('.roster-item').forEach(item => item.style.cursor = 'default');
+            grid.style.pointerEvents = 'none'; // Keep it read-only
+            
+            if (t.people && t.people.length > 0) {
+                // Generate clean pills for ONLY the assigned people
+                grid.innerHTML = t.people.map(personString => {
+                    // Split "Name (Role)" to style them differently
+                    const [name, role] = personString.split(' (');
+                    return `
+                        <div style="background:rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 8px 12px; border-radius: 8px; display: flex; flex-direction: column;">
+                            <strong style="color:white; font-size: 0.95rem;">${name}</strong>
+                            ${role ? `<small style="color:var(--accent); font-size: 0.8rem;">${role.replace(')', '')}</small>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                // Change grid layout to be more appropriate for a small list
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+                grid.style.gap = '8px';
+            } else {
+                grid.innerHTML = `<div style="color:#64748b; font-style:italic; padding: 10px;">No team members assigned to this task.</div>`;
+            }
         }
-
         document.getElementById('taskModal').style.display = 'block';
     }
 
@@ -882,6 +965,7 @@
 
                 const node = document.createElement('div');
                 node.className = `task-node ${lt === 'main'?'main-node':'bg-node'} ${t.pending ? 'is-pending' : ''} ${t.complete ? 'is-complete' : ''}`;
+                node.dataset.taskId = tasks.indexOf(t);
                 const nodeHeight = Math.max(15, (getMins(t.end) - s1) * 3);
                 const laneWidth = 340 / maxSimultaneous;
                 node.style.cssText = `top:${(s1-dStart)*3+35}px; height:${nodeHeight}px; width:${laneWidth-1}px; left:${(lt==='main' ? 65 : 495) + (colIndex * laneWidth)}px;`;
@@ -940,6 +1024,13 @@
             });
         });
         area.style.height = (dEnd-dStart)*3 + 250 + 'px'; updateNowLine();
+
+        if (currentFilter) {
+            const activePill = Array.from(document.querySelectorAll('.roster-pill'))
+                                    .find(p => p.innerText.includes(currentFilter));
+            // We pass the active pill so the UI stays consistent
+            if (activePill) toggleRosterFilter(currentFilter, activePill);
+        }
     }
 
     function removePersonFromTasks(personKey) {
@@ -958,19 +1049,123 @@
     }
 
     function renderRoster() {
-        // Updated to remove the "X" delete button
-        document.getElementById('rosterDisplay').innerHTML = roster.map((p, i) => 
-            `<div style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px;">
-                ${p.name} <small>(${p.role})</small> 
-            </div>`
-        ).join('');
+        const container = document.getElementById('rosterDisplay');
+        if (!container) return;
+        container.innerHTML = '';
         
-        // Keeps the hidden checklist logic working for the modal
-        document.getElementById('rosterCheckboxes').innerHTML = roster.map(p => 
-            `<div class="roster-item">
-                <span>${p.name} <small style="color:var(--accent); font-weight:bold;">(${p.role})</small></span>
-            </div>`
-        ).join('');
+        // Alphabetical sort
+        const sortedRoster = [...roster].sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedRoster.forEach(person => {
+            const span = document.createElement('span');
+            // If this person is the current filter, apply the active-filter class immediately
+            span.className = 'roster-pill' + (currentFilter === person.name ? ' active-filter' : '');
+            
+            span.style = "padding:6px 12px; border-radius:6px; font-size:12px; display:inline-block; margin:2px;";
+            
+            span.innerHTML = `<strong>${person.name}</strong><small>${person.role}</small>`;
+            
+            span.onclick = () => toggleRosterFilter(person.name, span);
+            container.appendChild(span);
+        });
+    }
+
+    function applyHighlightToNodes(name) {
+        const nodesContainer = document.getElementById('nodes');
+        const allNodes = document.querySelectorAll('.task-node');
+
+        if (!currentFilter) {
+            nodesContainer.classList.remove('filter-active');
+            allNodes.forEach(node => node.classList.remove('highlight-match'));
+            return;
+        }
+
+        nodesContainer.classList.add('filter-active');
+
+        allNodes.forEach(node => {
+            // Get the task index from the onclick attribute: showTask(5) -> 5
+            const match = node.getAttribute('onclick').match(/\d+/);
+            if (match) {
+                const idx = parseInt(match[0]);
+                const task = tasks[idx];
+                
+                // Check if name exists in task's people array
+                // We use 'includes' or 'some' depending on how strictly the name is stored
+                const isAssigned = task.people && task.people.some(p => p.includes(name));
+
+                if (isAssigned) {
+                    node.classList.add('highlight-match');
+                } else {
+                    node.classList.remove('highlight-match');
+                }
+            }
+        });
+    }
+
+    let currentFilter = null; 
+
+    function toggleRosterFilter(name, element) {
+        const nodesContainer = document.getElementById('nodes');
+        const allPills = document.querySelectorAll('.roster-pill');
+        const allNodes = document.querySelectorAll('.task-node');
+
+        // 1. Toggle OFF
+        if (currentFilter === name) {
+            currentFilter = null;
+            nodesContainer.classList.remove('filter-active');
+            allPills.forEach(p => p.classList.remove('active-filter'));
+            allNodes.forEach(n => n.classList.remove('highlight-match'));
+            return;
+        }
+
+        // 2. Set Active Filter
+        currentFilter = name;
+        nodesContainer.classList.add('filter-active');
+        allPills.forEach(p => p.classList.remove('active-filter'));
+        if(element) element.classList.add('active-filter');
+
+        // 3. Highlight Matching Tasks
+        allNodes.forEach(node => {
+            // NEW: Read the ID from the data attribute we just added
+            const idxString = node.dataset.taskId; 
+            
+            if (idxString) {
+                const idx = parseInt(idxString);
+                const task = tasks[idx];
+                
+                // Check for name match (handles "Name (Role)")
+                const isMatch = task.people && task.people.some(p => p.startsWith(name));
+
+                if (isMatch) {
+                    node.classList.add('highlight-match');
+                } else {
+                    node.classList.remove('highlight-match');
+                }
+            }
+        });
+    }
+
+    function applyCurrentFilter() {
+        if (!currentFilter) return;
+        const taskNodes = document.querySelectorAll('.task-node');
+        
+        taskNodes.forEach(node => {
+            // Find the task index from the onclick attribute: openModal(INDEX, false)
+            const match = node.onclick.toString().match(/\d+/);
+            if (match) {
+                const idx = parseInt(match[0]);
+                const t = tasks[idx];
+                
+                // Match if any person in the task starts with the filtered name
+                const isMatch = t.people && t.people.some(p => p.startsWith(currentFilter));
+
+                if (isMatch) {
+                    node.classList.add('highlight-match');
+                } else {
+                    node.classList.remove('highlight-match');
+                }
+            }
+        });
     }
 
     function addRoster() { 
@@ -1212,12 +1407,56 @@
         initApp();
     });
 
-    setInterval(updateNowLine, 30000);
-    renderRoster();
-	renderDays();
-	renderTasks();
-	setMode('main');
-	renderRooms();
+    // --- CONSOLIDATED STARTUP ENGINE ---
+
+    function startViewer() {
+        console.log("Starting Viewer Engine...");
+        
+        // 1. Load data from localStorage or Master Template
+        // (This ensures 'tasks', 'rooms', and 'roster' are populated)
+        initApp(); 
+
+        // 2. Set the default state
+        // We force currentDay to 1 and isChecklistMode to false for a fresh start
+        currentDay = 1;
+        isChecklistMode = false;
+
+        // 3. Render the UI components in the correct order
+        renderRoster();
+        renderRooms(); // Populates your room list
+        renderDays();   // Draws the day tabs
+
+        // 4. Force the first render of the schedule
+        // Using setTimeout(0) ensures the browser has painted the containers 
+        // before we try to calculate task positions.
+        setTimeout(() => {
+            activateDay(1); // This internally calls renderTasks() and binds clicks
+            updateNowLine();
+        }, 0);
+    }
+
+    // Replace all existing window.addEventListener calls at the bottom with this:
+    window.addEventListener('load', () => {
+        // Clear print cache
+        localStorage.removeItem('crhp_print_exchange');
+        
+        // Fire the engine
+        startViewer();
+        
+        // Start the clock
+        setInterval(updateNowLine, 30000);
+    });
+
+    document.getElementById('timelineArea').addEventListener('click', (e) => {
+        if (e.target.id === 'timelineArea' || e.target.classList.contains('time-gutter')) {
+            if (currentFilter) {
+                currentFilter = null;
+                document.getElementById('nodes').classList.remove('filter-active');
+                document.querySelectorAll('.roster-pill').forEach(p => p.classList.remove('active-filter'));
+            }
+        }
+    });
+
 </script>
 </body>
 </html>
