@@ -5,37 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schedule Manager | Home</title>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #f1f5f9; }
+        :root { 
+            --bg: #ffffff; 
+            --card: #ffffff; 
+            --text: #0f172a;
+            --accent-blue: #0284c7;
+            --accent-slate: #475569;
+            --border: #e2e8f0;
+        }
+
         body { 
-            background: var(--bg); color: var(--text); 
-            font-family: system-ui, sans-serif; 
-            display: flex; align-items: center; justify-content: center; 
-            height: 100vh; margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: system-ui, -apple-system, sans-serif; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
         }
+
         .lander-card { 
-            background: var(--card); padding: 40px; border-radius: 12px; 
-            text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            max-width: 400px; width: 90%;
+            padding: 40px; 
+            text-align: center; 
+            max-width: 400px; 
+            width: 90%;
         }
-        h1 { color: var(--accent); margin-bottom: 10px; }
-        p { opacity: 0.7; margin-bottom: 30px; line-height: 1.5; }
-        .btn-group { display: flex; flex-direction: column; gap: 15px; }
+
+        h1 { color: var(--text); margin-bottom: 8px; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.025em; }
+        p { color: #64748b; margin-bottom: 40px; line-height: 1.6; font-size: 1.1rem; }
+
+        .btn-group { display: flex; flex-direction: column; gap: 16px; }
+
         .btn { 
-            padding: 15px; border-radius: 8px; text-decoration: none; 
-            font-weight: bold; transition: transform 0.2s, background 0.2s;
+            padding: 18px; 
+            border-radius: 12px; 
+            text-decoration: none; 
+            font-weight: 700; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 14px;
+            font-size: 1.05rem;
+            border: 2px solid transparent;
         }
-        .btn-primary { background: var(--accent); color: #0f172a; }
-        .btn-secondary { border: 1px solid #334155; color: var(--text); }
-        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        /* 1. EDITOR: Deep Charcoal (Solid/Heavy) */
+        .btn-primary { 
+            background: #0f172a; 
+            color: white; 
+            box-shadow: 0 4px 14px 0 rgba(15, 23, 42, 0.39);
+        }
+
+        /* 2. VIEWER: Sky Blue (Vibrant/Vivid) */
+        .btn-viewer { 
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.39);
+        }
+
+        /* 3. PRINT: Minimalist Slate (Neutral/Secondary) */
+        .btn-print { 
+            background: #cbd5e1; /* The "Medium-Light" Gray-Blue */
+            color: #1e293b;      /* Dark slate text for pop */
+            box-shadow: 0 4px 12px rgba(148, 163, 184, 0.2);
+        }
+
+        /* Hover States */
+        .btn:hover { 
+            transform: translateY(-3px); 
+        }
+        
+        .btn-primary:hover { background: #1e293b; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.23); }
+        .btn-viewer:hover { background: #0369a1; box-shadow: 0 6px 20px rgba(2, 132, 199, 0.23); }
+        .btn-print:hover { 
+            background: #94a3b8; /* Darkens slightly on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(148, 163, 184, 0.4);
+        }
+
+        .btn span { font-size: 1.3rem; }
     </style>
 </head>
 <body>
     <div class="lander-card">
-        <h1>Retreat Planner</h1>
-        <p>Manage your schedule, team roster, and room assignments in real-time.</p>
+        <h1>CRHP Schedule Creator</h1>
+        <p>Professional management for scheduling your next CRHP Retreat.</p>
+        
         <div class="btn-group">
-            <a href="crhp-scheduler.html" class="btn btn-primary">Open Schedule Editor</a>
-            <a href="crhp-viewer.html" target="_blank" class="btn btn-secondary">View Schedule (Read-Only)</a>
+            <a href="crhp-scheduler.html" class="btn btn-primary">
+                <span>📝</span> Open Schedule Editor
+            </a>
+            
+            <a href="crhp-viewer.html" target="_blank" class="btn btn-viewer">
+                <span>👁️</span> View Existing Schedule
+            </a>
+            
+            <a href="print-service.html" target="_blank" class="btn btn-print">
+                <span>🖨️</span> Print a Schedule
+            </a>
         </div>
     </div>
 </body>
