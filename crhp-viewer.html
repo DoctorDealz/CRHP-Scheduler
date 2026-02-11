@@ -311,7 +311,7 @@
             padding: 8px;
         }
 
-                /* Styling for the read-only instructions area */
+        /* Styling for the read-only instructions area */
         .help-content {
             background: rgba(15, 23, 42, 0.5);
             border-radius: 8px;
@@ -353,7 +353,8 @@
             background: rgba(56, 189, 248, 0.1);
         }
 
-	        .btn-link {
+                /* Link Button Style */
+        .btn-link {
             width: 42px;
             height: 42px;
             border-radius: 50%; /* Matches the help button shape */
@@ -380,6 +381,38 @@
             fill: currentColor;
         }
 
+        .btn-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0; /* Prevents the circle from squishing */
+        transition: all 0.2s ease;
+        }
+
+        .btn-print {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%; /* Matches the help button shape */
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none; /* Removes underline from <a> tag */
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .btn-print:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+
     </style>
 </head>
 <body>
@@ -390,14 +423,22 @@
         </label>
         <input type="file" id="importFile" style="display:none" onchange="importSchedule(event)">
 
-            <button class="btn-ctrl" style="flex:1; background:var(--danger); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1.2;" onclick="resetToMaster()">
-                Reset to Master Template
-            </button>
+        <button class="btn-ctrl" style="flex:1; background:var(--danger); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1.2;" onclick="resetToMaster()">
+            Reset to Master Template
+        </button>
+
+        <button class="btn-print" onclick="openPrintService()" title="Print / Save PDF">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+        </button>
 
         <a href="crhp-scheduler.html" class="btn-link" target="_blank" title="Open Scheduler">
             <svg viewBox="0 0 24 24"><path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" /></svg>
         </a>
-		
+
         <button class="btn-help" onclick="toggleHelp()">?</button>
     </div>
     <div class="section-title">1. Team Roster</div>
@@ -1091,8 +1132,6 @@
             totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
         }
         
-        // Now that variables are set, draw the UI
-        renderAll(); 
     }
 
     function resetToMaster() {
@@ -1119,6 +1158,54 @@
         }
     }
 
+    function openPrintService() {
+        const printData = {
+            tasks: (typeof tasks !== 'undefined') ? tasks : [],
+            checklist: (typeof checklist !== 'undefined') ? checklist : [],
+            roster: (typeof roster !== 'undefined') ? roster : [],
+            rooms: (typeof rooms !== 'undefined') ? rooms : [],
+            totalDays: (typeof totalDays !== 'undefined') ? totalDays : 1
+        };
+
+        // 1. Open the window and capture the handle
+        const printWindow = window.open('print-service.html', '_blank');
+        
+        // 2. Bring the new tab to the front
+        if (printWindow) printWindow.focus();
+
+        // 3. The "Handshake"
+        const checkReady = setInterval(() => {
+            // If user closed the window before it loaded, stop checking
+            if (printWindow.closed) {
+                clearInterval(checkReady);
+                return;
+            }
+
+            // Push data to the new window
+            printWindow.postMessage({ 
+                type: 'PRINT_DATA', 
+                payload: printData 
+            }, '*');
+        }, 500);
+
+        // 4. Listen for a "Received" confirmation from the print-service to stop the interval
+        window.addEventListener('message', function(event) {
+            if (event.data === 'DATA_RECEIVED') {
+                clearInterval(checkReady);
+            }
+        });
+
+        // Safety timeout: stop trying after 10 seconds
+        setTimeout(() => clearInterval(checkReady), 10000);
+    }
+
+    // Run this immediately when the Viewer loads
+    window.addEventListener('load', () => {
+        // Clear the print exchange so old data doesn't haunt the print service
+        localStorage.removeItem('crhp_print_exchange');
+        console.log("Print cache cleared for fresh session.");
+    });
+
     // This is the trigger that actually starts the engine
     window.addEventListener('DOMContentLoaded', () => {
         console.log("DOM Ready. Starting initApp...");
@@ -1134,5 +1221,3 @@
 </script>
 </body>
 </html>
-
-
