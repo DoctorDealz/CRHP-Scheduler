@@ -406,6 +406,34 @@
         .modal-box.warning { border-top-color: #f87171; }
         .modal-box.warning .btn-primary { background: #f87171; color: white; }
 
+		/* Container for each checkbox + label pair */
+		.status-row {
+		    display: flex;
+		    align-items: center;
+		    gap: 12px;
+		    margin-bottom: 12px;
+		    background: rgba(255,255,255,0.05);
+		    padding: 10px;
+		    border-radius: 8px;
+		    cursor: pointer;
+		}
+		
+		/* Make checkboxes slightly larger and easier to click on Mac */
+		.status-row input[type="checkbox"] {
+		    width: 20px;
+		    height: 20px;
+		    margin: 0;
+		    cursor: pointer;
+		}
+		
+		.status-row label {
+		    font-size: 0.95rem;
+		    font-weight: 500;
+		    margin: 0;
+		    cursor: pointer;
+		    flex: 1;
+		}
+
     </style>
 </head>
 <body>
@@ -492,10 +520,15 @@
         </div>
         <div id="modalTimeSection" style="display:flex; gap:5px; margin-top:10px;"><input type="time" id="editStartTime"><input type="time" id="editEndTime"></div>
         <div class="section-title">Status</div>
-        <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="modalPendingEdit" onchange="if(this.checked) document.getElementById('modalCompleteEdit').checked=false"> Pending</label>
-            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="modalCompleteEdit" onchange="if(this.checked) document.getElementById('modalPendingEdit').checked=false"> Complete</label>
-        </div>
+		<label class="status-row" for="modalPendingEdit">
+		    <input type="checkbox" id="modalPendingEdit">
+		    <span>Pending</span>
+		</label>
+		
+		<label class="status-row" for="modalCompleteEdit">
+		    <input type="checkbox" id="modalCompleteEdit">
+		    <span>Completed</span>
+		</label>
         <div class="section-title">Assigned Room</div>
         <div style="display:flex; gap:8px;">
             <select id="editTaskRoom" style="flex:1; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;"></select>
