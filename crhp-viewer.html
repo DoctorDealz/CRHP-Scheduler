@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRHP Scheduler</title>
+    <title>CRHP Schedule Viewer</title>
     <style>
         :root {
             --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
@@ -14,8 +14,13 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         body.modal-open { overflow: hidden; height: 100vh; }
 
-        .fixed-top { padding: 15px; max-width: 600px; margin: 0 auto; background: var(--bg); }
-        .section-title { font-size: 0.8rem; color: var(--accent); font-weight: bold; margin: 15px 0 5px; text-transform: uppercase; }
+        .fixed-top { padding: 10px 15px; max-width: 600px; margin: 0 auto; background: var(--bg); }
+
+        .section-title {
+            margin-top: 5px !important;
+            margin-bottom: 2px !important;
+        }
+
         .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; }
         
         .btn-row { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -46,13 +51,13 @@
 
         .timeline-container { 
             position: relative; 
-            width: 890px;      /* Your chosen "sweet spot" width */
+            /* 410px (left side) + 80px (center) + 410px (right side) = 900px */
+            width: 890px;      
             margin: 0 auto;    
-            padding-right: 0; 
             box-sizing: border-box;
-            background: var(--bg);
+            padding-right: 0; /* Remove that extra padding */
         }
-        
+                
         .checklist-container { max-width: 600px; margin: 20px auto; padding: 0 15px; display: none; }
         .check-item { background: var(--card); border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 10px; position: relative; cursor: pointer; padding-right: 20px; }
         .check-item.is-pending { border: 2px dashed var(--accent) !important; }
@@ -71,10 +76,10 @@
         .tiny-toggle.active { background: white; color: black; }
 
         .v-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); z-index: 40; pointer-events: none; }
-        .l-80 { left: 60px; }
-        .l-430 { left: 410px; }
-        .l-510 { left: 490px; }
-        .l-860 { left: 840px; }
+        .l-80 { left: 60px; }  /* Main Start */
+        .l-430 { left: 410px; } /* Main End */
+        .l-510 { left: 490px; } /* BG Start */
+        .l-860 { left: 840px; } /* BG End */
 
         .lane-header { position: absolute; top: 0; display: flex; z-index: 30; background: var(--bg); height: 35px; align-items: center; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: bold; }
         .header-main { left: 60px; width: 350px; justify-content: center; color: var(--accent); }
@@ -98,20 +103,8 @@
             z-index: 30;
             background: var(--bg);
         }
-
-        .hour-mark { 
-            position: absolute; 
-            left: 0;
-            right: 0;
-            width: 100%;
-            text-align: center; /* This centers text inside a full-width block */
-            transform: translateY(-50%); 
-            /* Remove any left: 50% or translate(-50%) if using this method */
-            font-size: 9px; 
-            font-weight: bold; 
-            color: #cbd5e1; 
-        }
-
+        .hour-mark { position: absolute; right: 5px; transform: translateY(-50%); font-size: 9px; font-weight: bold; color: #cbd5e1; white-space: nowrap; }
+		
 		.ultra-compact-text {
 			line-height: 1;
 			display: flex;
@@ -132,8 +125,8 @@
             padding: 0px 2px; 
             background: rgba(15, 23, 42, 0.70); 
             border-radius: 3px; 
-        }
-        
+        }  
+
         .hour-line { 
             position: absolute; 
             left: 60px;  
@@ -145,6 +138,7 @@
         }
 
         .hour-line.major { background: rgba(255, 255, 255, 0.3); }
+
 
         #nowLine { 
             position: absolute; 
@@ -260,6 +254,90 @@
 			max-width: 1000px; /* Wider headers for desktop */
 			}
 		}
+        /* 1. Hide the "+" add buttons in Rooms and Roster headers */
+        .card button, 
+        #roomDisplay + button, 
+        #rosterDisplay + button,
+        .icon-btn {
+            display: none !important;
+        }
+
+        /* 2. Hide the entire Task Creator block */
+        #creatorTitle, 
+        #creatorTitle + .card,
+        #editorUI {
+            display: none !important;
+        }
+
+        /* 3. Hide any input fields that might be hanging around in the top sections */
+        .fixed-top input, 
+        .fixed-top select, 
+        .fixed-top textarea {
+            display: none !important;
+        }
+
+        /* 4. Ensure the Room and Roster lists look clean */
+        #roomDisplay, #rosterDisplay {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 0px 0 !important; /* Reduced from 10px */
+            margin: 0 !important;
+        }
+
+        /* Hide Day Delete 'X' and Add Day '+' button */
+        .day-delete-x, .day-add {
+            display: none !important;
+        }
+
+        /* Hide Checklist Delete 'X' and Add Item button */
+        .checklist-item span[onclick^="deleteCheckItem"],
+        #checklistView button,
+        #checklistView .btn-row {
+            display: none !important;
+        }
+
+        /* Hide the Settings/Gear icon if it exists */
+        .settings-btn {
+            display: none !important;
+        }
+
+        /* Viewer Lock: Hides all add/delete/edit controls */
+        .day-delete-x, 
+        .day-add, 
+        .checklist-item span[onclick^="delete"], 
+        #checklistView button,
+        #checklistView .btn-row,
+        .settings-btn {
+            display: none !important;
+        }
+
+        /* Ensure checklist items don't look like they have a clickable delete area */
+        .checklist-item span {
+            pointer-events: none !important;
+        }
+
+        /* Hide checkboxes in the modal crew list */
+        #modalRosterGrid input[type="checkbox"] {
+            display: none !important;
+        }
+
+        /* Hide the status (Pending/Complete) checkboxes in the modal */
+        #modalPendingEdit, 
+        #modalCompleteEdit, 
+        label[for="modalPendingEdit"], 
+        label[for="modalCompleteEdit"] {
+            display: none !important;
+        }
+
+        /* Optional: Make read-only inputs look cleaner */
+        #taskModal input[readonly], 
+        #taskModal textarea[readonly] {
+            border: none;
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            padding: 8px;
+        }
 
         /* Styling for the read-only instructions area */
         .help-content {
@@ -303,7 +381,7 @@
             background: rgba(56, 189, 248, 0.1);
         }
 
-        /* Link Button Style */
+                /* Link Button Style */
         .btn-link {
             width: 42px;
             height: 42px;
@@ -330,27 +408,6 @@
             height: 20px;
             fill: currentColor;
         }
-
-        .btn-home {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%; /* Matches the help button shape */
-            border: 1px solid var(--accent);
-            background: transparent;
-            color: var(--accent);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none; /* Removes underline from <a> tag */
-            flex-shrink: 0;
-            transition: background 0.2s;
-        }
-
-        .btn-home:hover {
-            background: rgba(56, 189, 248, 0.1);
-        }
-
 
         .btn-circle {
         width: 40px;
@@ -384,119 +441,197 @@
             background: rgba(56, 189, 248, 0.1);
         }
 
-        #custom-modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(7, 10, 15, 0.8); /* Darker overlay for better focus */
-            display: flex; align-items: center; justify-content: center;
-            z-index: 10000;
-            backdrop-filter: blur(8px); /* Stronger blur for "Glass" look */
-        }
-
-        .modal-box {
-            background: #1e293b; /* Deep slate background */
-            padding: 24px;
-            border-radius: 16px;
-            width: 95%; max-width: 420px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle edge highlight */
-            border-top: 4px solid var(--accent); /* Your signature blue line */
-        }
-
-        /* Modal Typography */
-        .modal-box h3 { 
-            margin: 0 0 12px 0; 
-            color: #f8fafc; /* Crisp white for the title */
-            font-size: 1.4rem;
-        }
-
-        .modal-box p { 
-            color: #cbd5e1; /* Light slate for readable body text */
-            margin-bottom: 24px; 
-            line-height: 1.6;
-            font-size: 1rem;
-        }
-
-        /* Buttons */
-        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
-
-        .modal-btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
+        /* Base style for roster pills */
+        .roster-pill {
             cursor: pointer;
             transition: all 0.2s ease;
-            font-size: 0.95rem;
+            border: 1px solid #334155;
+            background: #1e293b;
         }
 
-        /* Primary Button (Confirm) */
-        .btn-primary { 
-            background: var(--accent); 
-            color: #0f172a; /* Dark text on light blue background for pop */
-            border: none; 
-        }
-        .btn-primary:hover { 
-            background: #7dd3fc; /* Brighter blue on hover */
-            transform: translateY(-1px);
+        /* HOVER: Subtle lift, no glow */
+        .roster-pill:hover {
+            background: #2d3748 !important;
+            transform: translateY(-2px);
+            border-color: var(--accent);
         }
 
-        /* Secondary Button (Cancel) */
-        .btn-secondary { 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            color: #94a3b8; 
-        }
-        .btn-secondary:hover { 
-            background: rgba(255, 255, 255, 0.1); 
-            color: #f1f5f9;
+        /* SELECTED (Active Filter): The Glow Effect */
+        .roster-pill.active-filter {
+            background: var(--accent) !important;
+            border-color: #fff;
+            transform: translateY(-2px);
+            /* Neon Glow */
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6), 0 0 5px rgba(255, 255, 255, 0.4);
         }
 
-        /* Special Warning Style (Optional) */
-        .modal-box.warning { border-top-color: #f87171; }
-        .modal-box.warning .btn-primary { background: #f87171; color: white; }
+        /* SELECTED Text Colors: Ensure legibility during glow */
+        .roster-pill.active-filter strong {
+            color: #0f172a !important; /* Name turns dark */
+        }
 
-		/* Container for each checkbox + label pair */
-		.status-row {
+        .roster-pill.active-filter small {
+            color: #ffffff !important; /* Role turns white */
+            opacity: 1;
+        }
+
+        /* Normal Text Colors */
+        .roster-pill strong {
+            color: var(--text);
+            transition: color 0.2s;
+        }
+
+        .roster-pill small {
+            color: #94a3b8;
+            margin-left: 6px;
+            font-size: 0.85em;
+            transition: color 0.2s;
+        }
+
+        /* 1. When filter is ON, dim EVERYTHING */
+        #nodes.filter-active .task-node {
+            opacity: 0.1 !important;
+            filter: grayscale(100%);
+            pointer-events: none; /* Make non-matches unclickable */
+            transition: all 0.2s ease;
+        }
+
+        /* 2. BUT if it's a match, force it visible */
+        #nodes.filter-active .task-node.highlight-match {
+            opacity: 1 !important;
+            filter: grayscale(0%) !important;
+            z-index: 1000 !important;
+            box-shadow: 0 0 20px var(--accent);
+            outline: 2px solid white;
+            pointer-events: auto; /* Keep matches clickable */
+            transform: scale(1.02);
+        }
+
+        /* Status Badge Styling */
+        .status-badge {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            opacity: 0.4;
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+        }
+
+        /* Pending: Using your Light Blue Accent */
+        #modalPendingEdit:checked + .status-badge {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+        }
+
+        /* Complete: Using your Purple Task Color */
+        #modalCompleteEdit:checked + .status-badge {
+            background: rgba(168, 85, 247, 0.2);
+            border-color: var(--bg-task);
+            color: var(--bg-task);
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.1);
+        }
+
+        /* Container for the pills */
+        #rosterDisplay {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-            background: rgba(255,255,255,0.05);
+            flex-wrap: wrap;
+            gap: 8px;
             padding: 10px;
+        }
+
+        /* Individual Pill */
+        .roster-pill {
+            display: flex;
+            flex-direction: column; /* Stacks name over role */
+            align-items: center;    /* Horizontal centering */
+            justify-content: center; /* Vertical centering */
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
-		}
-		
-		/* Make checkboxes slightly larger and easier to click on Mac */
-		.status-row input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin: 0;
+            transition: all 0.2s ease;
+            min-width: 100px; /* Ensures a consistent "button" feel */
+        }
+
+        /* Name Styling */
+        .pill-name {
+            font-weight: bold;
+            font-size: 13px;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        /* Role Styling (Muted) */
+        .pill-role {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 1;
+            font-weight: bold;
+            color: var(--accent)
+        }
+
+        /* Active State */
+        .roster-pill.active-filter {
+            background: var(--accent) !important;
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .roster-pill.active-filter .pill-name,
+        .roster-pill.active-filter .pill-role {
+            color: #0f172a !important; /* Dark text for contrast on accent color */
+            opacity: 1; /* Bring role back to full visibility when active */
+        }
+
+        .btn-home {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%; /* Matches the help button shape */
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
             cursor: pointer;
-		}
-		
-		.status-row label {
-            font-size: 0.95rem;
-            font-weight: 500;
-            margin: 0;
-            cursor: pointer;
-            flex: 1;
-		}
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none; /* Removes underline from <a> tag */
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .btn-home:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
 
     </style>
 </head>
 <body>
 <div class="fixed-top">
-    <div class="btn-row">
+    <div style="display:flex; gap:10px; margin-bottom:15px; padding:0 15px;">
         <button class="btn-home" onclick="window.open('index.html', '_blank')" title="CRHP Schedule Hub">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
         </button>
-        <button class="btn-ctrl" onclick="exportData()">💾 EXPORT</button>
-        <button class="btn-ctrl" onclick="triggerImport()">📂 IMPORT</button>
-        <input type="file" id="importFile" style="display:none" onchange="importData(event)" accept=".json">
+        <label id="importBtn" for="importFile" style="flex:1; display:flex; align-items:center; justify-content:center; background:var(--accent); color:#0f172a; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer; font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1;">
+            IMPORT SCHEDULE
+        </label>
+        <input type="file" id="importFile" style="display:none" onchange="importSchedule(event)">
+
+        <button class="btn-ctrl" style="flex:1; display:flex; align-items:center; justify-content:center; background:var(--danger); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1;" onclick="resetToMaster()">
+            RESET TO MASTER TEMPLATE
+        </button>
 
         <button class="btn-print" onclick="openPrintService()" title="Print / Save PDF">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -506,7 +641,7 @@
             </svg>
         </button>
 
-        <a href="crhp-viewer.html" class="btn-link" target="_blank" title="Open Viewer">
+        <a href="crhp-scheduler.html" class="btn-link" target="_blank" title="Open Scheduler">
             <svg viewBox="0 0 24 24"><path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" /></svg>
         </a>
 
@@ -528,27 +663,19 @@
         <button id="checkToggle" class="checklist-toggle" onclick="activateChecklist()">📋 Checklist</button>
         <div id="dayBar" style="display:flex; gap:8px;"></div>
     </div>
-    <div id="creatorTitle" class="section-title">3. Task Creator</div>
-    <div class="card">
-        <div id="timeInputs" style="display:flex; gap:5px;"><div style="flex:1"><input type="time" id="startTime" value="09:00"></div><div style="flex:1"><input type="time" id="endTime" value="10:00"></div></div>
-        <input type="text" id="taskName" placeholder="Task Name">
-        <textarea id="taskDesc" placeholder="Description" style="height:50px;"></textarea>
-        <div id="laneToggle" class="toggle-group" style="display:flex; gap:5px; margin-bottom:10px;"><button id="tMain" class="toggle-btn" onclick="setMode('main')">Main</button><button id="tBg" class="toggle-btn" onclick="setMode('bg')">Background</button></div>
-        
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-            <div class="section-title" style="font-size: 0.7rem; opacity: 0.8; margin:0;">Assign Rooms</div>
+    <div id="editorUI" style="display:none;">
+        <div id="creatorTitle" class="section-title">3. Task Creator</div>
+        <div class="card">
+            <div id="timeInputs" style="display:flex; gap:5px;"><div style="flex:1"><input type="time" id="startTime" value="09:00"></div><div style="flex:1"><input type="time" id="endTime" value="10:00"></div></div>
+            <input type="text" id="taskName" placeholder="Task Name">
+            <textarea id="taskDesc" placeholder="Description" style="height:50px;"></textarea>
+            <div id="laneToggle" class="toggle-group" style="display:flex; gap:5px; margin-bottom:10px;"><button id="tMain" class="toggle-btn" onclick="setMode('main')">Main</button><button id="tBg" class="toggle-btn" onclick="setMode('bg')">Background</button></div>
+            <select id="taskRoom" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;">
+                <option value="">No Room Assigned</option>
+            </select>
+            <div id="rosterCheckboxes" class="roster-grid"></div>
+            <button onclick="addTask()" style="width:100%; padding:14px; background:var(--accent); color:#0f172a; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">ADD TASK</button>
         </div>
-
-        <div id="roomCheckboxes" class="roster-grid" 
-            style="margin-bottom:10px; height: auto; min-height: 40px; border:1px solid var(--border); padding:8px; border-radius:6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-        </div>
-        
-        <div class="section-title" style="font-size: 0.7rem; opacity: 0.8;">Assign Roster</div>
-        <div id="rosterCheckboxes" class="roster-grid" 
-            style="margin-bottom:10px; height: auto; min-height: 40px; border:1px solid var(--border); padding:8px; border-radius:6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-        </div>
-        
-        <button onclick="addTask()" style="width:100%; padding:14px; background:var(--accent); color:#0f172a; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">ADD TASK</button>
     </div>
 </div>
 
@@ -583,56 +710,30 @@
         <div class="section-title">Task Description</div>
         <textarea id="modalDescEdit" placeholder="Description" oninput="autoSize(this)"></textarea>
         
-        <div class="section-title">Status</div>
-        <label class="status-row" for="modalCompleteEdit">
-		<input type="checkbox" id="modalCompleteEdit">
-        <span>Completed</span>
-		</label>
-		<label class="status-row" for="modalPendingEdit">
-        <input type="checkbox" id="modalPendingEdit">
-        <span>Pending</span>
-		</label>
+        <div id="modalStatusSection" style="margin-bottom: 20px;">
+            <div class="section-title">Status</div>
+            <div style="display: flex; gap: 10px;">
+                <label style="flex: 1; cursor: pointer;">
+                    <input type="checkbox" id="modalCompleteEdit" style="display: none;">
+                    <div class="status-badge complete-badge">COMPLETE</div>
+                </label>
+                <label style="flex: 1; cursor: pointer;">
+                    <input type="checkbox" id="modalPendingEdit" style="display: none;">
+                    <div class="status-badge pending-badge">PENDING</div>
+                </label>
+            </div>
+        </div>
 		
         <div class="section-title">Assigned Rooms</div>
         <div id="modalRoomGrid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:5px; max-height:150px; overflow-y:auto; padding:5px; background:rgba(0,0,0,0.2); border-radius:6px;">
         </div>
         <div class="section-title">Assigned Crew</div>
         <div id="modalRosterGrid" class="roster-grid"></div>
-        <button class="btn-ctrl" style="width:100%; background:var(--accent); color:#0f172a; margin-bottom:10px;" onclick="closeModal(true)">Save Changes</button>
-        <button class="btn-ctrl" style="background:var(--danger); color:white; width:100%;" onclick="deleteCurrentTask()">🗑 Delete</button>
-    </div>
-</div>
-
-<div id="rosterEditModal" class="modal-overlay">
-    <div class="modal-content">
-        <button class="modal-cancel-x" onclick="closeRosterModal()">×</button>
-        <h3 style="color:var(--accent); margin-top:0;">Edit Team Member</h3>
-        
-        <label style="font-size: 0.8rem; color: #94a3b8;">Name</label>
-        <input type="text" id="editRosterName" class="modal-input" style="margin-bottom:15px;">
-        
-        <label style="font-size: 0.8rem; color: #94a3b8;">Role</label>
-        <input type="text" id="editRosterRole" class="modal-input" style="margin-bottom:20px;">
-        
-        <div style="display: flex; gap: 10px;">
-            <button class="btn-ctrl" style="flex:2; border-color:var(--accent); color:var(--accent);" onclick="saveRosterEdit()">Save Changes</button>
-            <button class="btn-ctrl" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="triggerRosterDelete()">Delete</button>
-        </div>
-    </div>
-</div>
-
-<div id="roomEditModal" class="modal-overlay">
-    <div class="modal-content">
-        <button class="modal-cancel-x" onclick="closeRoomModal()">✕</button>
-        <h3 style="color:var(--room); margin-top:0;">Edit Room</h3>
-        
-        <label style="font-size: 0.75rem; opacity: 0.7;">Room Name</label>
-        <input type="text" id="editRoomNameInput" class="modal-input" style="width:100%; margin-bottom:20px; background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; border-radius: 6px;">
-        
-        <div style="display: flex; gap: 10px;">
-            <button class="btn-ctrl" style="flex:2; border-color:var(--accent); color:var(--accent);" onclick="saveRoomEdit()">Save Changes</button>
-            <button class="btn-ctrl" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="triggerRoomDelete()">Delete</button>
-        </div>
+        <button id="saveStatusBtn" class="btn-ctrl" 
+            style="display:none; width:100%; background:var(--accent); color:#0f172a; margin-bottom:10px; font-weight:bold;" 
+            onclick="closeModal(true)">
+            SAVE STATUS CHANGE
+        </button>
     </div>
 </div>
 
@@ -651,20 +752,24 @@
                 <li><b>Now Line:</b> The dashed red line shows the current time.</li>
                 <li><b>Checklist:</b> Toggle mode to view tasks as a simple list.</li>
             </ul>
-            
-            <hr style="border:0; border-top:1px solid var(--danger); margin:15px 0; opacity:0.3;">
-            <p style="color:var(--danger); font-size:0.75rem; margin-bottom:10px; font-weight:bold; text-transform:uppercase;">Admin Tools</p>
-            <button class="btn-ctrl" style="border-color:var(--danger); color:var(--danger); width:100%; margin-bottom:15px;" onclick="resetToMaster()">
-                Reset to CRHP Master Template
-            </button>
-
-            <button class="btn-ctrl" style="background:rgba(239, 68, 68, 0.1); border-color:var(--danger); color:var(--danger); width:100%;" onclick="clearScheduleFresh()">
-                🗑 Clear All (Fresh Start)
-            </button>
-
             <p style="font-size:0.75rem; opacity:0.7; font-style:italic;">Note: Use Export to save your data before clearing the cache.</p>
         </div>
         <button class="btn-ctrl" style="width:100%; margin-top:20px;" onclick="toggleHelp()">Close</button>
+    </div>
+</div>
+
+<div id="rosterEditModal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="modal-cancel-x" onclick="closeRosterModal()">×</button>
+        <h3 style="color:var(--accent); margin-top:0;">Edit Personnel</h3>
+        
+        <input type="text" id="editRosterName" placeholder="Name">
+        <input type="text" id="editRosterRole" placeholder="Role (e.g. Lead, Support)">
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-ctrl" style="flex:1; border-color:var(--accent); color:var(--accent);" onclick="saveRosterEdit()">Save Changes</button>
+            <button class="btn-ctrl" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="deleteRosterItem()">Delete</button>
+        </div>
     </div>
 </div>
 
@@ -675,7 +780,7 @@
     let totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
     let currentDay = 1, mode = 'main', editMode = 'main', activeTaskIndex = null, isChecklistMode = false, cachedDStart = 0;
 	let rooms = JSON.parse(localStorage.getItem('v50_rooms')) || [];
-
+	
     const saveAll = () => { 
         localStorage.setItem('v50_tasks', JSON.stringify(tasks)); 
         localStorage.setItem('v50_checklist', JSON.stringify(checklist));
@@ -683,9 +788,10 @@
         localStorage.setItem('v50_days', totalDays);
 		localStorage.setItem('v50_rooms', JSON.stringify(rooms));
     };
-	
+
     const MASTER_TEMPLATE = `{"tasks":[{"day":1,"start":"09:00","end":"09:30","name":"Reconciliation Witness","desc":"Jacob gives reconciliation witness.","people":["Jacob (Facilities leader)"],"type":"main","complete":false,"pending":false},{"day":1,"start":"08:30","end":"09:00","name":"Breakfast","desc":"Breakfast and fellowship","people":[],"type":"main","pending":false,"complete":false,"room":""},{"day":1,"start":"08:45","end":"09:00","name":"Pray with witness","desc":"Thomas pray with Jacob in chapel","people":["Jacob (Facilities leader)","Thomas (Formation leader)"],"type":"bg","pending":false,"complete":false,"room":"Chapel"},{"day":1,"start":"08:30","end":"09:30","name":"Sacristan duties","desc":"Jonathan has to pick up priest","people":["Jonathan (Sacristan)"],"type":"bg","complete":false,"pending":false,"room":"Chapel"},{"day":1,"start":"10:00","end":"10:05","name":"Break","desc":"Get up, bathroom, snacks, water","people":["Jacob (Facilities leader)","Jonathan (Sacristan)","Thomas (Formation leader)"],"type":"main","pending":false,"complete":false,"room":"Any"},{"day":1,"start":"22:00","end":"23:59","name":"Now line tester","desc":"","people":[],"type":"main","room":"","pending":false,"complete":false}],"checklist":[{"name":"Test bro","desc":"Yo ","people":["Jacob (Facilities leader)"],"done":false,"pending":false}],"roster":[{"name":"Jacob","role":"Facilities leader"},{"name":"Jonathan","role":"Sacristan"},{"name":"Thomas","role":"Formation leader"}],"rooms":["Chapel","Any"],"totalDays":1}`;
 
+    
     // 1. Initial attempt to load from storage
     let rawTasks = localStorage.getItem('v50_tasks');
     let rawRoster = localStorage.getItem('v50_roster');
@@ -729,7 +835,8 @@
             line.style.top = pos + 'px'; 
             line.style.display = 'block';
             
-            const timeStr = formatTo12h(`${now.getHours()}:${now.getMinutes()}`);
+            const mins = now.getMinutes().toString().padStart(2, '0');
+            const timeStr = formatTo12h(`${now.getHours()}:${mins}`);
             const indicatorHtml = `<div class="now-time-indicator" style="top:${pos}px">${timeStr}</div>`;
             document.getElementById('leftGutter').insertAdjacentHTML('beforeend', indicatorHtml);
             document.getElementById('centerGutter').insertAdjacentHTML('beforeend', indicatorHtml);
@@ -774,13 +881,9 @@
                 const parts = p.split(' (');
                 return `${parts[0]} <small>(${parts[1]}</small>`;
             }).join(', ');
+            
             return `
             <div class="check-item ${item.pending ? 'is-pending' : ''} ${item.done ? 'is-complete' : ''}" onclick="openModal(${i}, true)">
-                <span class="check-del" onclick="event.stopPropagation(); deleteCheckItem(${i})">✕</span>
-                <div class="check-status-row">
-                    <div class="tiny-toggle ${item.pending ? 'active' : ''}" onclick="toggleCheckStatus(${i}, 'P', event)">P</div>
-                    <div class="tiny-toggle ${item.done ? 'active' : ''}" onclick="toggleCheckStatus(${i}, 'C', event)">C</div>
-                </div>
                 <span class="check-item-title">${item.name}</span>
                 <div class="check-item-desc" style="font-size:0.9rem; margin-bottom:8px; opacity:0.8;">${item.desc}</div>
                 <div class="crew-list">${item.people.length > 0 ? '<span class="assigned-label">Assigned:</span> ' + crewFormatted : ''}</div>
@@ -793,178 +896,211 @@
         document.body.classList.add('modal-open');
         const t = fromChecklist ? checklist[index] : tasks[index];
         
-        document.getElementById('modalHeader').innerText = fromChecklist ? "Edit Checklist Item" : "Edit Task";
-        document.getElementById('editTaskName').value = t.name;
-        document.getElementById('modalDescEdit').value = t.desc || "";
-        document.getElementById('modalPendingEdit').checked = t.pending || false;
-        document.getElementById('modalCompleteEdit').checked = (fromChecklist ? t.done : t.complete) || false;
+        // 1. Header & Text Fields
+        document.getElementById('modalHeader').innerText = fromChecklist ? "Checklist Detail" : "Task Detail";
         
-        if(fromChecklist) {
-            document.getElementById('modalLaneSection').style.display = 'none';
-            document.getElementById('modalTimeSection').style.display = 'none';
-        } else {
-            document.getElementById('modalLaneSection').style.display = 'block';
-            document.getElementById('modalTimeSection').style.display = 'flex';
-            document.getElementById('editStartTime').value = t.start;
-            document.getElementById('editEndTime').value = t.end;
-            
-            // --- CHANGED: Use renderEditRooms instead of setting value ---
-            // Checks for t.rooms array first, falls back to legacy t.room string
-            renderEditRooms(t.rooms || t.room); 
+        const nameInp = document.getElementById('editTaskName');
+        nameInp.value = t.name;
+        nameInp.readOnly = true;
 
-            setEditMode(t.type || 'main');
+        // Hide Description section if empty
+        const descInp = document.getElementById('modalDescEdit');
+        const descSection = document.getElementById('modalDescSection'); // Ensure this ID exists around your desc field
+        if (t.desc && t.desc.trim() !== "") {
+            if (descSection) descSection.style.display = 'block';
+            descInp.value = t.desc;
+            descInp.readOnly = true;
+        } else {
+            if (descSection) descSection.style.display = 'none';
+        }
+
+        // 2. Status Tracking & Checkbox Logic
+        const pBox = document.getElementById('modalPendingEdit');
+        const cBox = document.getElementById('modalCompleteEdit');
+        const saveBtn = document.getElementById('saveStatusBtn');
+
+        const initialPending = t.pending || false;
+        const initialComplete = (fromChecklist ? t.done : t.complete) || false;
+        
+        pBox.checked = initialPending;
+        cBox.checked = initialComplete;
+        saveBtn.style.display = 'none'; 
+
+        const checkStatusChange = () => {
+            const hasChanged = (pBox.checked !== initialPending || cBox.checked !== initialComplete);
+            saveBtn.style.display = hasChanged ? 'block' : 'none';
+        };
+
+        pBox.onchange = () => { if (pBox.checked) cBox.checked = false; checkStatusChange(); };
+        cBox.onchange = () => { if (cBox.checked) pBox.checked = false; checkStatusChange(); };
+
+        // 3. Lane, Time, and Rooms
+        const laneSection = document.getElementById('modalLaneSection');
+        const timeSection = document.getElementById('modalTimeSection');
+        const roomSection = document.getElementById('modalRoomSection');
+
+        if (fromChecklist) {
+            if (laneSection) laneSection.style.display = 'none';
+            if (timeSection) timeSection.style.display = 'none';
+            if (roomSection) roomSection.style.display = 'none';
+        } else {
+            // Lane Badge
+            if (laneSection) {
+                laneSection.style.display = 'block';
+                const isMain = (t.type !== 'bg');
+                const laneColor = isMain ? 'var(--accent)' : 'var(--bg-task)';
+                laneSection.innerHTML = `
+                    <div class="section-title">Assigned Lane</div>
+                    <div style="padding: 10px; background: ${laneColor}15; border: 1px solid ${laneColor}; 
+                                color: ${laneColor}; border-radius: 8px; font-size: 11px; 
+                                font-weight: bold; text-align: center; letter-spacing: 1px;">
+                        ${isMain ? 'MAIN LANE' : 'BACKGROUND LANE'}
+                    </div>`;
+            }
+
+            // Time
+            if (timeSection) {
+                timeSection.style.display = 'flex';
+                document.getElementById('editStartTime').value = t.start;
+                document.getElementById('editEndTime').value = t.end;
+                document.getElementById('editStartTime').readOnly = true;
+                document.getElementById('editEndTime').readOnly = true;
+            }
+
+            // Rooms (Hide if empty)
+            const rooms = t.rooms || (t.room ? t.room.split(', ') : []);
+            if (rooms.length > 0 && rooms[0] !== "") {
+                if (roomSection) roomSection.style.display = 'block';
+                renderViewerRooms(rooms);
+            } else {
+                if (roomSection) roomSection.style.display = 'none';
+            }
         }
         
-        renderEditRoster(t.people || []); 
-        
-        // Setup Exclusivity Logic
-        const pendingBox = document.getElementById('modalPendingEdit');
-        const completeBox = document.getElementById('modalCompleteEdit');
-
-        pendingBox.onchange = () => {
-            if (pendingBox.checked) completeBox.checked = false;
-        };
-
-        completeBox.onchange = () => {
-            if (completeBox.checked) pendingBox.checked = false;
-        };
+        // 4. Roster Section (Hide if empty)
+        const rosterSection = document.getElementById('modalRosterSection');
+        if (t.people && t.people.length > 0) {
+            if (rosterSection) rosterSection.style.display = 'block';
+            renderViewerRoster(t.people); 
+        } else {
+            if (rosterSection) rosterSection.style.display = 'none';
+        }
 
         document.getElementById('taskModal').style.display = 'block';
     }
 
     function closeModal(save) {
-        if(save) {
+        if (save) {
             const isEditingChecklist = document.getElementById('modalHeader').innerText.includes("Checklist");
             const t = isEditingChecklist ? checklist[activeTaskIndex] : tasks[activeTaskIndex];
-            
-            const name = document.getElementById('editTaskName').value;
-            const desc = document.getElementById('modalDescEdit').value;
-            const crew = Array.from(document.querySelectorAll('#modalRosterGrid input:checked')).map(c => c.value);
-            
-            // Capture Status
-            const pending = document.getElementById('modalPendingEdit').checked;
-            const complete = document.getElementById('modalCompleteEdit').checked;
 
-            // --- CHANGED: Capture Rooms as Array ---
-            const roomArray = Array.from(document.querySelectorAll('#modalRoomGrid input:checked')).map(c => c.value);
-            const roomString = roomArray.join(', '); // For legacy support/display
-            // --------------------------------------
+            // Capture the toggle states from the UI
+            const isPending = document.getElementById('modalPendingEdit').checked;
+            const isComplete = document.getElementById('modalCompleteEdit').checked;
 
-            if(isEditingChecklist) {
-                t.name = name; 
-                t.desc = desc; 
-                t.people = crew; 
-                t.pending = pending; 
-                t.done = complete;
+            // Update the data object correctly based on mode
+            if (isEditingChecklist) {
+                t.pending = isPending;
+                t.done = isComplete; // Checklist mode uses .done
             } else {
-                let s = document.getElementById('editStartTime').value;
-                let e = document.getElementById('editEndTime').value;
-                if (e === "00:00") { e = "23:59"; }
-                
-                if(getMins(e) < getMins(s)) {
-                    // Midnight Span Logic
-                    const originalDay = t.day;
-                    tasks.splice(activeTaskIndex, 1);
-                    
-                    // Part 1
-                    tasks.push({ 
-                        day: originalDay, start: s, end: "23:59", 
-                        name, desc, people: crew, type: editMode, 
-                        rooms: roomArray, room: roomString, // Save both
-                        pending, complete 
-                    });
-                    
-                    if (originalDay === totalDays) { totalDays++; renderDays(); }
-
-                    // Part 2
-                    tasks.push({ 
-                        day: originalDay + 1, start: "00:00", end: e, 
-                        name, desc, people: crew, type: editMode, 
-                        rooms: roomArray, room: roomString, // Save both
-                        pending, complete 
-                    });
-                } else {
-                    // Normal Update
-                    t.name = name; 
-                    t.desc = desc; 
-                    t.people = crew; 
-                    t.pending = pending; 
-                    t.complete = complete;
-                    t.start = s; 
-                    t.end = e; 
-                    t.type = editMode; 
-                    
-                    // Save Rooms
-                    t.rooms = roomArray;
-                    t.room = roomString; 
-                }
+                t.pending = isPending;
+                t.complete = isComplete; // Timeline mode uses .complete
             }
+
+            // Persist and refresh UI
             saveAll(); 
-            isChecklistMode ? renderChecklist() : renderTasks();
+            if (isEditingChecklist) {
+                renderChecklist();
+            } else {
+                renderTasks();
+            }
         }
 
-        // Cleanup
+        // Cleanup: reset UI state for next use
+        document.getElementById('saveStatusBtn').style.display = 'none';
         document.body.classList.remove('modal-open'); 
         document.getElementById('taskModal').style.display = 'none';
+    }
+
+    function renderViewerRooms(rooms) {
+        const container = document.getElementById('modalRoomGrid');
+        if (!container) return;
+        container.innerHTML = rooms.map(r => `
+            <div style="padding: 8px; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--room); 
+                        color: var(--room); border-radius: 6px; font-size: 11px; font-weight: bold; text-align: center;">
+                ${r}
+            </div>
+        `).join('');
+    }
+
+    /**
+    * Helper: Renders cleaned roster with dynamic borders matching lane color
+    */
+    function renderViewerRoster(people, isMain) {
+        const container = document.getElementById('modalRosterGrid');
+        if (!container) return;
         
-        // Clear selections
-        document.querySelectorAll('#modalRosterGrid input').forEach(cb => cb.checked = false);
-        document.querySelectorAll('#modalRoomGrid input').forEach(cb => cb.checked = false);
+        // Choose border color based on lane
+        const borderColor = isMain ? 'var(--accent)' : '#8b5cf6'; // Blue vs Purple
+        const bgColor = isMain ? 'rgba(56, 189, 248, 0.05)' : 'rgba(139, 92, 246, 0.05)';
+
+        container.innerHTML = people.map(p => {
+            const parts = p.split(' (');
+            const name = parts[0].trim();
+            const role = parts[1] ? parts[1].replace(')', '').trim() : null;
+            
+            return `
+                <div style="padding: 10px; background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 8px; text-align: center;">
+                    <div style="font-weight: bold; font-size: 13px; color: var(--text);">${name}</div>
+                    ${role ? `<div style="font-size: 9px; color: ${borderColor}; text-transform: uppercase; margin-top: 2px; font-weight: 600; letter-spacing:0.5px;">${role}</div>` : ''}
+                </div>
+            `;
+        }).join('');
     }
 
     function addTask() {
-        const n = document.getElementById('taskName').value, d = document.getElementById('taskDesc').value;
-        const p = Array.from(document.querySelectorAll('#rosterCheckboxes input:checked')).map(c => c.value);
-        
-        // --- CHANGED: Capture Multiple Rooms from the new checkbox grid ---
-        const selectedRooms = Array.from(document.querySelectorAll('#roomCheckboxes input:checked')).map(c => c.value);
-        const roomStr = selectedRooms.join(', '); // Legacy string support
-        // ------------------------------------------------------------------
-
-        if(!n) return;
-        if(isChecklistMode) {
-            checklist.push({ name: n, desc: d, people: p, done: false, pending: false });
-        } else {
-            let s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
-            if (e === "00:00") { e = "23:59"; }
-            
-            if(getMins(e) < getMins(s)) {
-                // Task crosses midnight - Day 1
-                tasks.push({ 
-                    day: currentDay, start: s, end: "23:59", name: n, desc: d, people: p, type: mode, 
-                    rooms: selectedRooms, // Array
-                    room: roomStr,        // String
-                    pending: false, complete: false 
-                });
-                if (currentDay === totalDays) { totalDays++; renderDays(); }
-                // Task crosses midnight - Day 2
-                tasks.push({ 
-                    day: currentDay + 1, start: "00:00", end: e, name: n, desc: d, people: p, type: mode, 
-                    rooms: selectedRooms, // Array
-                    room: roomStr,        // String
-                    pending: false, complete: false 
-                });
-            } else {
-                // Standard single day
-                tasks.push({ 
-                    day: currentDay, start: s, end: e, name: n, desc: d, people: p, type: mode, 
-                    rooms: selectedRooms, // Array
-                    room: roomStr,        // String
-                    pending: false, complete: false 
-                });
-            }
-        }
-        
-        saveAll(); 
-        isChecklistMode ? renderChecklist() : renderTasks();
-        
-        // --- RESET FORM ---
-        document.getElementById('taskName').value = ''; 
-        document.getElementById('taskDesc').value = '';
-        
-        // Clear both Roster and Room checkboxes
-        document.querySelectorAll('#rosterCheckboxes input, #roomCheckboxes input').forEach(cb => cb.checked = false);
-    }
+		const n = document.getElementById('taskName').value, d = document.getElementById('taskDesc').value;
+		const p = Array.from(document.querySelectorAll('#rosterCheckboxes input:checked')).map(c => c.value);
+		const selectedRoom = document.getElementById('taskRoom').value; // Room captured here
+		
+		if(!n) return;
+		if(isChecklistMode) {
+			checklist.push({ name: n, desc: d, people: p, done: false, pending: false });
+		} else {
+			let s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
+			if (e === "00:00") { e = "23:59"; }
+			
+			if(getMins(e) < getMins(s)) {
+				// Task crosses midnight - Day 1
+				tasks.push({ 
+					day: currentDay, start: s, end: "23:59", name: n, desc: d, people: p, type: mode, 
+					room: selectedRoom, 
+					pending: false, complete: false 
+				});
+				if (currentDay === totalDays) { totalDays++; renderDays(); }
+				// Task crosses midnight - Day 2
+				tasks.push({ 
+					day: currentDay + 1, start: "00:00", end: e, name: n, desc: d, people: p, type: mode, 
+					room: selectedRoom, 
+					pending: false, complete: false 
+				});
+			} else {
+				// Standard single day
+				tasks.push({ 
+					day: currentDay, start: s, end: e, name: n, desc: d, people: p, type: mode, 
+					room: selectedRoom, 
+					pending: false, complete: false 
+				});
+			}
+		}
+		saveAll(); 
+		isChecklistMode ? renderChecklist() : renderTasks();
+		document.getElementById('taskName').value = ''; 
+		document.getElementById('taskDesc').value = '';
+		document.getElementById('taskRoom').value = '';
+		document.querySelectorAll('#rosterCheckboxes input').forEach(cb => cb.checked = false);
+		
+	}
 
     const formatTo12h = (t) => { 
         if(!t) return ""; 
@@ -977,6 +1113,7 @@
         if(isChecklistMode) return;
         const nodes = document.getElementById('nodes'), area = document.getElementById('timelineArea');
         nodes.innerHTML = ''; document.getElementById('leftGutter').innerHTML = ''; document.getElementById('centerGutter').innerHTML = '';
+        
         const dayTasks = tasks.filter(t => t.day === currentDay).sort((a,b) => getMins(a.start) - getMins(b.start));
         if(!dayTasks.length) { area.style.height = '400px'; cachedDStart = 540; updateNowLine(); return; }
         
@@ -987,7 +1124,7 @@
         for(let m=dStart; m<=dEnd; m+=15){
             const pos = (m-dStart)*3 + 35, mins=m%60;
             const hourStr = Math.floor(m/60)+':'+mins.toString().padStart(2,'0');
-            const lbl = `<div class="hour-mark" style="top:${pos}px">${formatTo12h(hourStr)}</div>`;
+            const lbl = `<div class="hour-mark" style="top:${pos}px; left: 50%; transform: translate(-50%, -50%); right: auto;">${formatTo12h(hourStr)}</div>`;
             document.getElementById('leftGutter').innerHTML += lbl; document.getElementById('centerGutter').innerHTML += lbl;
             nodes.innerHTML += `<div class="hour-line ${mins===0?'major':''}" style="top:${pos}px"></div>`;
         }
@@ -1019,33 +1156,34 @@
 
                 const node = document.createElement('div');
                 node.className = `task-node ${lt === 'main'?'main-node':'bg-node'} ${t.pending ? 'is-pending' : ''} ${t.complete ? 'is-complete' : ''}`;
+                node.dataset.taskId = tasks.indexOf(t);
+                
                 const nodeHeight = Math.max(15, (getMins(t.end) - s1) * 3);
                 const laneWidth = 340 / maxSimultaneous;
-                node.style.cssText = `top:${(s1-dStart)*3+35}px; height:${nodeHeight}px; width:${laneWidth-1}px; left:${(lt==='main'?65:495)+(colIndex*laneWidth)}px;`;
+                node.style.cssText = `top:${(s1-dStart)*3+35}px; height:${nodeHeight}px; width:${laneWidth-1}px; left:${(lt==='main' ? 65 : 495) + (colIndex * laneWidth)}px;`;
                 node.onclick = () => openModal(tasks.indexOf(t), false);
                 
                 const timeRangeStr = `${formatTo12h(t.start)} - ${formatTo12h(t.end)}`;
                 const crewCount = t.people ? t.people.length : 0;
-                
-                // 1. Clean Names Logic
                 const slimNames = t.people ? t.people.map(p => p.split(' (')[0]).join(', ') : '';
+                
                 const fullCrew = t.people ? t.people.map(p => {
                     const parts = p.split(' (');
-                    const namePart = parts[0].trim();
-                    const rolePart = parts[1] ? parts[1].replace(')', '').trim() : null;
+                    const namePart = parts[0];
+                    const rolePart = parts[1] ? parts[1].replace(')', '') : null;
                     return rolePart ? `${namePart} <small>(${rolePart})</small>` : namePart;
                 }).join(', ') : '';
 
-                // 2. Room Logic
-                const roomLabel = (t.rooms && t.rooms.length > 0) ? t.rooms.join(', ') : (t.room || "");
-                const roomBlock = roomLabel ? `<div class="room-label" style="margin-bottom:2px; color:var(--room); font-weight:bold;">${roomLabel}</div>` : "";
+                const roomBlock = t.room ? `<div class="room-label" style="margin-bottom:2px; color:var(--room); font-weight:bold;">${t.room}</div>` : "";
 
+                // --- RESTORED STATUS LOGIC ---
                 const showButtons = maxSimultaneous < 3;
                 const statusHtml = showButtons ? `
                     <div class="status-toggles">
                         <div class="tiny-toggle ${t.pending ? 'active' : ''}" onclick="toggleStatus(${tasks.indexOf(t)}, 'P', event)">P</div>
                         <div class="tiny-toggle ${t.complete ? 'active' : ''}" onclick="toggleStatus(${tasks.indexOf(t)}, 'C', event)">C</div>
                     </div>` : '';
+                // -----------------------------
 
                 if (nodeHeight < 40) {
                     node.innerHTML = `
@@ -1093,12 +1231,11 @@
                         <div class="task-meta" style="font-size: 0.75rem;">
                             <div class="crew-list" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                                 <span style="opacity:0.8">${timeRangeStr}</span> |
-                                ${roomLabel ? `<span class="room-label" style="color:var(--room); font-weight:bold;">${roomLabel}</span> | ` : ''}
+                                ${t.room ? `<span class="room-label" style="color:var(--room); font-weight:bold;">${t.room}</span> |` : ''} 
                                 ${slimNames ? `<span style="opacity:0.4"> </span>${slimNames}` : ''}
                             </div>
                         </div>`;
                 } else {
-                    // LARGE VIEW - Fixed t.name and added separator line
                     const hasCrew = crewCount > 0;
                     const crewHtml = hasCrew 
                         ? (nodeHeight < 85 ? slimNames : `<span class="assigned-label">Assigned:</span> ${fullCrew}`)
@@ -1110,7 +1247,7 @@
                             ${statusHtml}
                         </div>
                         <div class="task-meta">
-                            <div class="time-range" style="font-size: 0.85em; opacity: 0.8;">${timeRangeStr}</div>
+                            <div class="time-range">${timeRangeStr}</div>
                             ${roomBlock} 
                             <div class="crew-list">${crewHtml}</div>
                         </div>`;
@@ -1118,7 +1255,29 @@
                 nodes.appendChild(node);
             });
         });
-        area.style.height = (dEnd-dStart)*3 + 250 + 'px'; updateNowLine();
+
+        area.style.height = (dEnd-dStart)*3 + 250 + 'px'; 
+        updateNowLine();
+
+        if (currentFilter) {
+            applyFilterState(currentFilter);
+        }
+    }
+
+    // Helper to keep renderTasks clean
+    function applyFilterState(filterKey) {
+        const nodesContainer = document.getElementById('nodes');
+        const allNodes = document.querySelectorAll('.task-node');
+        if (!filterKey) return;
+
+        nodesContainer.classList.add('filter-active');
+        const [name, role] = filterKey.split('|');
+
+        allNodes.forEach(node => {
+            const t = tasks[node.dataset.taskId];
+            const isMatch = t.people && t.people.some(p => p.includes(name) && p.includes(role));
+            node.classList.toggle('highlight-match', isMatch);
+        });
     }
 
     function removePersonFromTasks(personKey) {
@@ -1126,143 +1285,160 @@
         checklist.forEach(i => { if(i.people) i.people = i.people.filter(p => p !== personKey); });
     }
 
-	function addRoster() { 
-        const n = document.getElementById('rosName').value, r = document.getElementById('rosRole').value; 
-        if(n){ roster.push({name:n, role:r || ""}); saveAll(); renderRoster(); document.getElementById('rosName').value=''; document.getElementById('rosRole').value=''; }
-    }
-
-    let editingRosterIndex = null;
-
-    function openRosterEdit(i) {
-        editingRosterIndex = i;
+    function deleteRosterItem(i) {
         const p = roster[i];
-        document.getElementById('editRosterName').value = p.name;
-        document.getElementById('editRosterRole').value = p.role;
-        document.getElementById('rosterEditModal').style.display = 'block';
+        const key = `${p.name} (${p.role})`;
+        if(confirm(`Are you sure you want to delete ${p.name}? They will be removed from all task assignments.`)) {
+            removePersonFromTasks(key);
+            roster.splice(i, 1);
+            saveAll(); renderRoster(); renderTasks(); renderChecklist();
+        }
     }
 
-    function closeRosterModal() {
-        document.getElementById('rosterEditModal').style.display = 'none';
-        editingRosterIndex = null;
+    function renderRoster() {
+        const container = document.getElementById('rosterDisplay');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const sortedRoster = [...roster].sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedRoster.forEach(person => {
+            const pill = document.createElement('div'); // Changed to div for better block control
+            const uniqueKey = `${person.name}|${person.role}`;
+            
+            pill.setAttribute('data-unique-id', uniqueKey);
+            pill.className = 'roster-pill' + (currentFilter === uniqueKey ? ' active-filter' : '');
+            
+            // Stack Name and Role with a muted look for the role
+            pill.innerHTML = `
+                <span class="pill-name">${person.name}</span>
+                <span class="pill-role">${person.role}</span>
+            `;
+            
+            pill.onclick = () => toggleRosterFilter(uniqueKey, pill);
+            container.appendChild(pill);
+        });
     }
 
-    function saveRosterEdit() {
-        const i = editingRosterIndex;
-        const p = roster[i];
-        
-        // This matches the format "Name (Role)"
-        const oldKey = `${p.name} (${p.role})`; 
-        
-        const newName = document.getElementById('editRosterName').value.trim();
-        const newRole = document.getElementById('editRosterRole').value.trim();
-        const newKey = `${newName} (${newRole})`;
+    function applyHighlightToNodes(name) {
+        const nodesContainer = document.getElementById('nodes');
+        const allNodes = document.querySelectorAll('.task-node');
 
-        if (!newName) return;
+        if (!currentFilter) {
+            nodesContainer.classList.remove('filter-active');
+            allNodes.forEach(node => node.classList.remove('highlight-match'));
+            return;
+        }
 
-        // 1. Update the tasks array - TARGETING 'people' specifically
-        tasks.forEach(t => {
-            // We check 'people' because that's what your renderTasks function uses
-            if (t.people && Array.isArray(t.people)) {
-                t.people = t.people.map(personString => {
-                    // If the string matches the old Name (Role), replace it
-                    return personString === oldKey ? newKey : personString;
-                });
+        nodesContainer.classList.add('filter-active');
+
+        allNodes.forEach(node => {
+            // Get the task index from the onclick attribute: showTask(5) -> 5
+            const match = node.getAttribute('onclick').match(/\d+/);
+            if (match) {
+                const idx = parseInt(match[0]);
+                const task = tasks[idx];
+                
+                // Check if name exists in task's people array
+                // We use 'includes' or 'some' depending on how strictly the name is stored
+                const isAssigned = task.people && task.people.some(p => p.includes(name));
+
+                if (isAssigned) {
+                    node.classList.add('highlight-match');
+                } else {
+                    node.classList.remove('highlight-match');
+                }
+            }
+        });
+    }
+
+    let currentFilter = null; 
+
+    function toggleRosterFilter(uniqueKey, element) {
+        const nodesContainer = document.getElementById('nodes');
+        const allPills = document.querySelectorAll('.roster-pill');
+        const allNodes = document.querySelectorAll('.task-node');
+
+        // 1. Toggle OFF
+        if (currentFilter === uniqueKey) {
+            currentFilter = null;
+            nodesContainer.classList.remove('filter-active');
+            allPills.forEach(p => p.classList.remove('active-filter'));
+            allNodes.forEach(n => n.classList.remove('highlight-match'));
+            return;
+        }
+
+        // 2. Set Active Filter
+        currentFilter = uniqueKey;
+        nodesContainer.classList.add('filter-active');
+        
+        // Split uniqueKey back into name and role for matching tasks
+        const [name, role] = uniqueKey.split('|');
+
+        // UI: Update Pills
+        allPills.forEach(p => {
+            if (p.getAttribute('data-unique-id') === uniqueKey) {
+                p.classList.add('active-filter');
+            } else {
+                p.classList.remove('active-filter');
             }
         });
 
-        // 2. Update the roster array so the sidebar/list is current
-        roster[i] = { name: newName, role: newRole };
+        // 3. Highlight Matching Tasks
+        allNodes.forEach(node => {
+            const idxString = node.dataset.taskId; 
+            if (idxString) {
+                const task = tasks[parseInt(idxString)];
+                
+                // Check if task.people contains this specific person
+                // This assumes your task.people stores strings like "Name (Role)" 
+                // or just matches the name/role logic used elsewhere.
+                const isMatch = task.people && task.people.some(p => {
+                    // Adjust this matching logic based on how you save people strings:
+                    return p.includes(name) && p.includes(role);
+                });
 
-        if (document.getElementById('taskModal').style.display === 'block') {
-            // 1. Find all checkboxes that are currently checked in the task modal
-            const currentlyChecked = Array.from(document.querySelectorAll('#modalRosterGrid input:checked'))
-                .map(cb => cb.value);
-            
-            // 2. If the person we just edited was checked, update their name in our temporary list
-            const updatedChecked = currentlyChecked.map(val => val === oldKey ? newKey : val);
-            
-            // 3. Redraw the checklist so it shows the new name and keeps the checkmarks
-            renderEditRoster(updatedChecked);
-        }
+                if (isMatch) {
+                    node.classList.add('highlight-match');
+                } else {
+                    node.classList.remove('highlight-match');
+                }
+            }
+        });
+    }
 
-        // 3. Save and Refresh
-        saveAll();
-        renderRoster(); // Updates your sidebar list
-        renderTasks();  // This will now find the updated names in t.people and redraw the blocks
+    function applyCurrentFilter() {
+        if (!currentFilter) return;
+        const taskNodes = document.querySelectorAll('.task-node');
         
-        closeRosterModal();
+        taskNodes.forEach(node => {
+            // Find the task index from the onclick attribute: openModal(INDEX, false)
+            const match = node.onclick.toString().match(/\d+/);
+            if (match) {
+                const idx = parseInt(match[0]);
+                const t = tasks[idx];
+                
+                // Match if any person in the task starts with the filtered name
+                const isMatch = t.people && t.people.some(p => p.startsWith(currentFilter));
+
+                if (isMatch) {
+                    node.classList.add('highlight-match');
+                } else {
+                    node.classList.remove('highlight-match');
+                }
+            }
+        });
     }
 
-    function triggerRosterDelete() {
-        const i = editingRosterIndex;
-        const personName = roster[i].name;
-
-        showModal(
-            "Delete Team Member?", 
-            `Are you sure you want to delete ${personName}? This will also remove them from all assigned tasks.`,
-            () => {
-                const key = `${roster[i].name} (${roster[i].role})`;
-                removePersonFromTasks(key);
-                roster.splice(i, 1);
-                saveAll();
-                renderRoster();
-                renderTasks();
-                closeRosterModal();
-            },
-            true,
-            "Delete Member",
-            "danger",
-            "Cancel"
-        );
+    function addRoster() { 
+        const n = document.getElementById('rosName').value, r = document.getElementById('rosRole').value; 
+        if(n){ roster.push({name:n, role:r || ""}); saveAll(); renderRoster(); document.getElementById('rosName').value=''; document.getElementById('rosRole').value=''; }
     }
-
-    window.addEventListener('click', (e) => {
-        const rosterModal = document.getElementById('rosterEditModal');
-        const taskModal = document.getElementById('taskModal');
-        const helpModal = document.getElementById('helpModal');
-
-        // If the click target is the overlay itself (not the content box inside)
-        if (e.target === rosterModal) {
-            closeRosterModal();
-        }
-        if (e.target === taskModal) {
-            closeModal(false); // Close without saving
-        }
-        if (e.target === helpModal) {
-            toggleHelp();
-        }
-        if (e.target === document.getElementById('roomEditModal')) {
-            closeRoomModal();
-    }
-    });
-
-    function renderRoster() {
-        // 1. Main Display List (The pills at the top)
-        document.getElementById('rosterDisplay').innerHTML = roster.map((p, i) => 
-            `<div onclick="openRosterEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer; display:inline-block; margin:2px;">
-                ${p.name} <small>(${p.role})</small> 
-            </div>`
-        ).join('');
-        
-        // 2. Task Creator Grid (Updated for 3-column expanding layout)
-        const creatorRosterGrid = document.getElementById('rosterCheckboxes');
-        if (creatorRosterGrid) {
-            creatorRosterGrid.innerHTML = roster.map((p, i) => {
-                const fullName = `${p.name} (${p.role})`;
-                return `
-                    <div class="roster-item" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; background: rgba(56, 189, 248, 0.05); margin-bottom: 2px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.1);">
-                        <div style="display: flex; align-items: center; flex: 1; cursor: pointer; overflow: hidden;" onclick="const ck=this.querySelector('input'); ck.checked=!ck.checked;">
-                            <input type="checkbox" value="${fullName}" onclick="event.stopPropagation()" style="accent-color:var(--accent);">
-                            <span style="margin-left: 8px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                ${p.name} <small style="color:var(--accent); font-weight:bold; font-size: 9px;">(${p.role})</small>
-                            </span>
-                        </div>
-                        <span onclick="event.stopPropagation(); openRosterEdit(${i})" style="cursor: pointer; padding: 0 2px; opacity: 0.6; font-size: 12px;">⚙️</span>
-                    </div>
-                `;
-            }).join('');
-        }
-    }
+	
+	function addRoom() {
+    const n = document.getElementById('roomName').value;
+    if(n) { rooms.push(n); saveAll(); renderRooms(); document.getElementById('roomName').value=''; }
+	}
 
     function renderEditRooms(assignedRooms) {
         const container = document.getElementById('modalRoomGrid');
@@ -1284,48 +1460,21 @@
         }).join('');
     }
 
-	function addRoom() {
-	    // 1. Get the input
-        const input = document.getElementById('roomName');
-        const n = input.value.trim();
-	
-        if (n) {
-	        // 2. Update the array
-            rooms.push(n);
-	
-	        // 3. Use your existing saveAll function
-            saveAll(); 
-	
-	        // 4. Refresh the UI
-            renderRooms(); 
-	
-	        // 5. Clear the input
-            input.value = '';
-        }
+	function deleteRoom(i) {
+		if(confirm("Delete this room?")) {
+			const deletedRoom = rooms[i];
+			tasks.forEach(t => { if(t.room === deletedRoom) t.room = ""; });
+			rooms.splice(i, 1);
+			saveAll(); renderRooms(); renderTasks();
+		}
 	}
-
-    function openQuickRoomEdit() {
-        const currentRoom = document.getElementById('editTaskRoom').value;
-        if (!currentRoom) {
-            showModal(
-                "No Room Selected", 
-                "Please select a room from the dropdown first to edit it, or use the Room List at the top to manage all rooms.",
-                null,    // No function to run
-                false,   // No cancel button needed
-                "OK"     // Custom button text
-            );
-            return;
-        }
-        const roomIndex = rooms.indexOf(currentRoom);
-        if (roomIndex !== -1) openRoomEdit(roomIndex);
-    }
 
     function renderRooms() {
         // 1. Management List at the bottom
         const display = document.getElementById('roomDisplay');
         if (display) {
             display.innerHTML = rooms.map((r, i) => 
-                `<div onclick="openRoomEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; border:1px solid var(--room); cursor:pointer;">
+                `<div onclick="openRoomEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; border:1px solid var(--room);">
                     ${r}
                 </div>`
             ).join('');
@@ -1352,85 +1501,6 @@
         }
     }
 
-    let editingRoomIndex = null;
-
-    function openRoomEdit(i) {
-        editingRoomIndex = i;
-        const roomName = rooms[i];
-        
-        // Ensure the input exists before setting value
-        const input = document.getElementById('editRoomNameInput');
-        if (input) {
-            input.value = roomName;
-        }
-        
-        document.getElementById('roomEditModal').style.display = 'block';
-    }
-
-    function closeRoomModal() {
-        document.getElementById('roomEditModal').style.display = 'none';
-        editingRoomIndex = null;
-    }
-
-    function saveRoomEdit() {
-        const oldName = rooms[editingRoomIndex];
-        // Fixed ID here to match your HTML: editRoomNameInput
-        const input = document.getElementById('editRoomNameInput');
-        const newName = input ? input.value.trim() : "";
-
-        if (!newName || newName === oldName) {
-            closeRoomModal();
-            return;
-        }
-
-        tasks.forEach(t => {
-            if (t.room === oldName) t.room = newName;
-        });
-
-        rooms[editingRoomIndex] = newName;
-
-        saveAll();
-        renderRooms();
-        renderTasks();
-        
-        // Sync the task modal dropdown if it's currently open
-        const editSelect = document.getElementById('editTaskRoom');
-        if (document.getElementById('taskModal').style.display === 'block' && editSelect.value === oldName) {
-            editSelect.value = newName;
-        }
-
-        closeRoomModal();
-    }
-
-    function triggerRoomDelete() {
-        // 1. Safety check for the index
-        if (editingRoomIndex === null) return;
-        
-        const nameToRemove = rooms[editingRoomIndex];
-
-        showModal(
-            "Delete Room?", 
-            `Are you sure you want to delete "${nameToRemove}"? Any tasks currently in this room will be set to "No Room Assigned".`,
-            () => {
-                // 2. Clear room from tasks
-                tasks.forEach(t => {
-                    if (t.room === nameToRemove) t.room = "";
-                });
-                
-                // 3. Remove from array and sync
-                rooms.splice(editingRoomIndex, 1);
-                saveAll();
-                renderRooms();
-                renderTasks();
-                closeRoomModal();
-            },
-            true,
-            "Delete Room",
-            "danger",
-            "Cancel"
-        );
-    }
-
     function renderDays() {
         const bar = document.getElementById('dayBar'); bar.innerHTML = '';
         for(let i=1; i<=totalDays; i++){
@@ -1446,212 +1516,73 @@
     function setEditMode(m) { editMode = m; document.getElementById('modalTMain').className = `toggle-btn ${m==='main'?'active-main':''}`; document.getElementById('modalTBg').className = `toggle-btn ${m==='bg'?'active-bg':''}`; }
     function autoSize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
     function triggerImport() { document.getElementById('importFile').click(); }
+    function exportData() {
+		const now = new Date();
+
+		// --- ADD THESE 3 LINES ---
+		const dateStr = now.toISOString().split('T')[0]; 
+		const timeStr = now.getHours().toString().padStart(2, '0') + '-' + 
+						now.getMinutes().toString().padStart(2, '0');
+
+		// Include all data categories in the exported object
+		const dataToExport = {
+			tasks: tasks,
+			checklist: checklist,
+			roster: roster,
+			rooms: rooms,
+			totalDays: totalDays
+		};
+		
+		const blob = new Blob([JSON.stringify(dataToExport)], {type:'application/json'});
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(blob);
+
+		// This now uses the variables created above
+		a.download = `schedule_${dateStr}_${timeStr}.json`; 
+		
+		a.click();
+	}
     
-    function exportData(onComplete = null) {
-        const now = new Date();
-        const dateStr = now.toISOString().split('T')[0]; 
-        const timeStr = now.getHours().toString().padStart(2, '0') + '-' + 
-                        now.getMinutes().toString().padStart(2, '0');
-        const defaultName = `crhp_schedule_backup_${dateStr}_${timeStr}`;
-
-        showModal(
-            "Export Schedule",
-            "Enter a name for your export file:",
-            (userFileName) => {
-                // If they cancel or close, we should still trigger the callback 
-                // so the next modal (the wipe) can appear.
-                if (userFileName === null || userFileName === false) {
-                    if (onComplete) onComplete();
-                    return;
-                }
-
-                userFileName = userFileName.replace(/\.json$/i, "").trim();
-                const finalFileName = (userFileName || defaultName) + ".json";
-
-                const dataToExport = {
-                    tasks: tasks,
-                    checklist: checklist,
-                    roster: roster,
-                    rooms: rooms,
-                    totalDays: totalDays,
-                    exportedAt: now.toLocaleString()
-                };
+	function importSchedule(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                tasks = data.tasks || [];
+                rooms = data.rooms || [];
+                roster = data.roster || [];
+                checklist = data.checklist || []; // Ensure checklist is included
+                totalDays = data.totalDays || 1;
                 
-                const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {type:'application/json'});
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = finalFileName; 
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(a.href);
-
-                // KEY: Run the next step only AFTER the download logic finishes
-                if (onComplete) onComplete();
-            },
-            true, "Download", "info", "Cancel", true, defaultName
-        );
-
-        // Make Enter key work for the export input
-        const input = document.getElementById('modal-input-field');
-        if (input) {
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') document.getElementById('modal-ok').click();
-            });
-        }
-    }
-    
-    function importData(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // 1. Ask for confirmation first, since this overwrites all current data
-        showModal(
-            "Import Schedule?",
-            "This will replace all your current tasks, roster, and rooms with the data from this file. Are you sure?",
-            (confirmed) => {
-                if (!confirmed) return;
-
-                const r = new FileReader();
-                r.onload = (ev) => {
-                    try {
-                        const d = JSON.parse(ev.target.result);
-                        
-                        // Update global variables
-                        tasks = d.tasks || [];
-                        checklist = d.checklist || [];
-                        roster = d.roster || [];
-                        rooms = d.rooms || [];
-                        totalDays = d.totalDays || 1;
-                        
-                        // Sync and Refresh UI
-                        saveAll();
-                        renderRoster();
-                        renderRooms();
-                        renderDays();
-                        renderTasks();
-                        
-                        // 2. Success Modal
-                        showModal("Import Successful", "Your schedule data has been loaded successfully.", null, false, "Great!");
-                        
-                    } catch(err) {
-                        console.error(err);
-                        // 3. Error Modal
-                        showModal("Import Error", "The file provided is not a valid schedule JSON file.", null, false, "OK", "danger");
-                    }
-                };
-                r.readAsText(file);
-                
-                // Clear the input so the same file can be imported again if needed
-                e.target.value = '';
-            },
-            true, // isConfirm = true
-            "Yes, Import",
-            "info",
-            "Cancel"
-        );
+                saveAll();
+                alert("Schedule Loaded Successfully!");
+                location.reload(); // Force refresh to show new data
+            } catch(err) {
+                alert("Invalid File Format");
+            }
+        };
+        reader.readAsText(e.target.files[0]);
     }
 
     
     function deleteDay(e, n) { 
         e.stopPropagation(); 
-
-        // Replacement for the alert
-        if (totalDays === 1) { 
-            showModal(
-                "Cannot Delete", 
-                "You must have at least one day in your schedule.",
-                null, 
-                false, 
-                "OK"
-            );
-            return; 
-        } 
-
-        // Replacement for the confirm
-        showModal(
-            "Delete Day?", 
-            `Are you sure you want to delete Day ${n}? All tasks assigned to this day will be permanently removed.`,
-            () => { 
-                tasks = tasks.filter(t => t.day !== n); 
-                tasks.forEach(t => { if (t.day > n) t.day--; }); 
-                totalDays--; 
-                currentDay = 1; 
-                
-                saveAll(); 
-                renderDays(); 
-                renderTasks(); 
-                updateViewToggles(); 
-            },
-            true,
-            "Delete Day",
-            "danger",
-            "Cancel"
-        );
-    }
-
-    function deleteCheckItem(i) {
-        // Check for .name here because that's what your addTask function uses
-        const itemName = checklist[i].name || "this item";
-        
-        showModal(
-            "Remove Item?", 
-            `Are you sure you want to remove "${itemName}" from your checklist?`,
-            () => {
-                checklist.splice(i, 1);
-                saveAll();
-                renderChecklist();
-            },
-            true,
-            "Remove",
-            "danger",
-            "Cancel"
-        );
-    }
-
-    function renderEditRoster(assigned) {
-        document.getElementById('modalRosterGrid').innerHTML = roster.map((p, i) => {
-            const k = `${p.name} (${p.role})`;
-            const isChecked = assigned.includes(k) ? 'checked' : '';
+        if(totalDays === 1) { alert("Cannot delete the only day."); return; } 
+        if(confirm(`Delete Day ${n}?`)){ 
+            tasks = tasks.filter(t=>t.day!==n); 
+            tasks.forEach(t=>{ if(t.day>n) t.day--; }); 
+            totalDays--; 
+            currentDay = 1; 
             
-            return `
-                <div class="roster-item" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px;">
-                    <div style="display: flex; align-items: center; flex: 1; cursor: pointer;" onclick="const ck=this.querySelector('input'); ck.checked=!ck.checked;">
-                        <input type="checkbox" value="${k}" ${isChecked} onclick="event.stopPropagation()">
-                        <span style="margin-left: 8px;">${p.name} <small style="color:var(--accent); font-weight:bold;">(${p.role})</small></span>
-                    </div>
-                    <span onclick="event.stopPropagation(); openRosterEdit(${i})" style="cursor: pointer; padding: 0 5px; opacity: 0.6; font-size: 14px;">⚙️</span>
-                </div>
-            `;
-        }).join('');
+            saveAll(); 
+            renderDays(); 
+            renderTasks(); 
+            updateViewToggles(); 
+        } 
     }
-    
-    function deleteCurrentTask() {
-        const isCheck = document.getElementById('modalHeader').innerText.includes("Checklist");
-        
-        // Both tasks and checklist items use .name based on your addTask function
-        const itemArray = isCheck ? checklist : tasks;
-        const displayName = itemArray[activeTaskIndex].name || (isCheck ? "this item" : "this task");
-
-        showModal(
-            `Delete ${isCheck ? 'Item' : 'Task'}?`,
-            `Are you sure you want to remove "${displayName}"?`,
-            () => {
-                if (isCheck) {
-                    checklist.splice(activeTaskIndex, 1);
-                } else {
-                    tasks.splice(activeTaskIndex, 1);
-                }
-                saveAll();
-                isChecklistMode ? renderChecklist() : renderTasks();
-                closeModal(false);
-            },
-            true,
-            "Delete",
-            "danger",
-            "Cancel"
-        );
-    }
+    function deleteCheckItem(i) { if(confirm("Remove checklist item?")) { checklist.splice(i, 1); saveAll(); renderChecklist(); } }
+    function renderEditRoster(assigned) { document.getElementById('modalRosterGrid').innerHTML = roster.map(p => { const k = `${p.name} (${p.role})`; return `<div class="roster-item" onclick="const ck=this.querySelector('input'); ck.click()"><input type=\"checkbox\" value="${k}" ${assigned.includes(k)?'checked':''} onclick="event.stopPropagation()"><span>${p.name} <small style="color:var(--accent); font-weight:bold;">(${p.role})</small></span></div>`; }).join(''); }
+    function deleteCurrentTask() { if(confirm("Delete this item?")) { const isCheck = document.getElementById('modalHeader').innerText.includes("Checklist"); if(isCheck) checklist.splice(activeTaskIndex, 1); else tasks.splice(activeTaskIndex, 1); saveAll(); isChecklistMode ? renderChecklist() : renderTasks(); closeModal(false); } }
 
     function toggleHelp() {
         const modal = document.getElementById('helpModal');
@@ -1666,39 +1597,30 @@
         }
     }
 
-    function renderAll() {
-        renderRooms();
-        renderRoster(); // or renderRosterCheckboxes()
-        renderDays();
-        if (isChecklistMode) {
-            renderChecklist();
-        } else {
-            renderTasks();
-        }
-    }
-
-    function initApp() {
+        function initApp() {
+        // Check for one of your specific v50 keys
         const hasData = localStorage.getItem('v50_tasks');
-        // NEW: Check if the user explicitly wanted a blank slate
-        const isBlankForced = localStorage.getItem('v50_is_blank');
         
-        // Only load template if data is missing AND we haven't forced a blank start
-        if ((!hasData || hasData === "null" || hasData === "[]") && isBlankForced !== "true") {
+        if (!hasData || hasData === "null" || hasData === "[]") {
             console.log("No v50 data found. Loading master retreat template...");
             
             try {
                 const data = JSON.parse(MASTER_TEMPLATE);
+                
+                // Assign to your global variables
                 tasks = data.tasks || [];
                 checklist = data.checklist || [];
                 roster = data.roster || [];
                 rooms = data.rooms || [];
                 totalDays = data.days || 1;
+                
+                // Save them into the v50 slots immediately
                 saveAll(); 
             } catch (e) {
                 console.error("Master Template Parse Error:", e);
             }
         } else {
-            // Data exists (or user chose to be blank)
+            // Data exists! Load each piece into its variable
             tasks = JSON.parse(localStorage.getItem('v50_tasks')) || [];
             checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
             roster = JSON.parse(localStorage.getItem('v50_roster')) || [];
@@ -1706,248 +1628,31 @@
             totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
         }
         
-        renderAll(); 
-    }
-
-    function showModal(title, message, onConfirm = null, isConfirm = false, confirmText = "Confirm", type = "info", cancelText = "Cancel", includeInput = false, defaultInputValue = "") {
-        const existing = document.getElementById('custom-modal-overlay');
-        if (existing) existing.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'custom-modal-overlay';
-        
-        overlay.innerHTML = `
-            <div class="modal-box ${type === 'danger' ? 'warning' : ''}">
-                <h3>${title}</h3>
-                <p>${message}</p>
-                ${includeInput ? `
-                    <input type="text" id="modal-input-field" class="modal-input" 
-                        style="width:100%; margin-bottom:20px; background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; border-radius: 6px;" 
-                        value="${defaultInputValue}">
-                ` : ''}
-                <div class="modal-actions">
-                    <button class="modal-btn btn-primary" id="modal-ok">${confirmText}</button>
-                    ${isConfirm ? `<button class="modal-btn btn-secondary" id="modal-cancel">${cancelText}</button>` : ''}
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-
-        // Focus input if it exists
-        if (includeInput) {
-            const input = document.getElementById('modal-input-field');
-            input.focus();
-            input.select(); // Highlight text for easy overwriting
-        }
-
-        document.getElementById('modal-ok').onclick = () => {
-            let returnValue = true;
-            if (includeInput) {
-                returnValue = document.getElementById('modal-input-field').value;
-            }
-            overlay.remove();
-            if (onConfirm) onConfirm(returnValue);
-        };
-
-        if (isConfirm && document.getElementById('modal-cancel')) {
-            document.getElementById('modal-cancel').onclick = () => overlay.remove();
-        }
-
-        overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-    }
-
-    function isModifiedFromMaster() {
-        try {
-            const master = JSON.parse(MASTER_TEMPLATE);
-            
-            // Stringify both to see if the content is exactly the same
-            const currentData = JSON.stringify({
-                tasks: tasks,
-                checklist: checklist,
-                roster: roster,
-                rooms: rooms,
-                days: totalDays
-            });
-            
-            const masterData = JSON.stringify({
-                tasks: master.tasks || [],
-                checklist: master.checklist || [],
-                roster: master.roster || [],
-                rooms: master.rooms || [],
-                days: master.days || 1
-            });
-
-            return currentData !== masterData;
-        } catch (e) {
-            return true; // If master is broken, assume modified to be safe
-        }
     }
 
     function resetToMaster() {
-        const hasData = tasks.length > 0 || roster.length > 0;
-        const isModified = typeof isModifiedFromMaster === 'function' ? isModifiedFromMaster() : true;
-
-        // Inner Function: The final "point of no return" step
-        const proceedWithDelete = () => {
-            showModal(
-                "Wait! Final Warning", 
-                "This will delete all names and edits and revert to the CRHP master template. Proceed?",
-                () => {
-                    try {
-                        localStorage.removeItem('v50_is_blank');
-                        const data = JSON.parse(MASTER_TEMPLATE);
-                        
-                        tasks = data.tasks || [];
-                        checklist = data.checklist || [];
-                        roster = data.roster || [];
-                        rooms = data.rooms || [];
-                        totalDays = data.days || 1;
-                        
-                        saveAll();
-                        location.reload(); 
-                    } catch (e) {
-                        console.error("Error:", e);
-                    }
-                },
-                true,
-                "Yes, Reset Everything",
-                "danger",   // Type
-                "Keep My Data"    // False/Cancel label
-            );
-        };
-
-        // Step 1: Check if we should offer a backup first
-        if (hasData && isModified) {
-            showModal(
-                "Backup Edits?", 
-                "Before resetting, would you like to download a backup of your current edits?",
-                () => { 
-                    exportData(() => proceedWithDelete());
-                },
-                true,
-                "Download & Continue",
-                "info",    // Type
-                "No"       // False/Cancel label
-            );
-            
-            // Ensure clicking "No" still leads to the Reset warning
-            const cancelBtn = document.getElementById('modal-cancel');
-            if (cancelBtn) {
-                cancelBtn.onclick = () => {
-                    document.getElementById('custom-modal-overlay').remove();
-                    proceedWithDelete();
-                };
-            }
-        } else {
-            // No edits worth backing up, go straight to reset warning
-            proceedWithDelete();
-        }
-    }
-
-    function clearScheduleFresh() {
-        const hasData = tasks.length > 0 || roster.length > 0;
-        const isModified = typeof isModifiedFromMaster === 'function' ? isModifiedFromMaster() : true;
-
-        const proceedWithWipe = () => {
-            showModal(
-                "Final Warning: Total Wipe", 
-                "DANGER: This will delete ALL tasks, roster members, and rooms. Proceed?",
-                () => {
-                    tasks = []; checklist = []; roster = []; rooms = []; totalDays = 1;
-                    localStorage.setItem('v50_is_blank', 'true');
-                    saveAll();
-                    location.reload(); 
-                },
-                true,
-                "Delete Everything",
-                "danger",
-                "Keep My Data" // Custom Cancel Text
-            );
-        };
-
-        if (hasData && isModified) {
-            showModal(
-                "Backup Edits?", 
-                "Would you like to download a backup of your edits before wiping everything?",
-                () => { 
-                    exportData(() => proceedWithWipe());
-                },
-                true,
-                "Yes, Download",
-                "info",
-                "No" // <--- Custom Cancel Text here!
-            );
-
-            // Manually hook the "No" button to proceed to wipe
-            const cancelBtn = document.getElementById('modal-cancel');
-            if(cancelBtn) {
-                cancelBtn.onclick = () => {
-                    document.getElementById('custom-modal-overlay').remove();
-                    proceedWithWipe();
-                };
-            }
-        } else {
-            proceedWithWipe();
-        }
-    }
-
-    function downloadBackup() {
-        const now = new Date();
-        const dateStr = now.toISOString().split('T')[0];
-        const timeStr = now.getHours().toString().padStart(2, '0') + 
-                        now.getMinutes().toString().padStart(2, '0');
-        const defaultName = `crhp_schedule_backup_${dateStr}_${timeStr}`;
-
-        showModal(
-            "Download Backup",
-            "Enter a name for your backup file:",
-            (userFileName) => {
-                // This runs when they click 'Download' or press 'Enter'
-                if (userFileName === null || userFileName === false) return;
-
-                userFileName = userFileName.replace(/\.json$/i, "").trim();
-                const finalFileName = (userFileName || defaultName) + ".json";
-
-                const backupData = {
-                    tasks: tasks,
-                    checklist: checklist,
-                    roster: roster,
-                    rooms: rooms,
-                    days: totalDays,
-                    timestamp: now.toLocaleString()
-                };
+        if (confirm("Wait! This will delete all names and edits and revert to the master template. Proceed?")) {
+            try {
+                // 1. Parse the master string into an object
+                const data = JSON.parse(MASTER_TEMPLATE);
                 
-                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
+                // 2. Unpack it into your specific v50 keys
+                localStorage.setItem('v50_tasks', JSON.stringify(data.tasks || []));
+                localStorage.setItem('v50_checklist', JSON.stringify(data.checklist || []));
+                localStorage.setItem('v50_roster', JSON.stringify(data.roster || []));
+                localStorage.setItem('v50_rooms', JSON.stringify(data.rooms || []));
+                localStorage.setItem('v50_days', data.days || 1); // Save total days count
                 
-                link.href = url;
-                link.download = finalFileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            },
-            true,           // isConfirm (show second button)
-            "Download",     // confirmText (on the left)
-            "info",         // type
-            "Cancel",       // cancelText (on the right)
-            true,           // includeInput
-            defaultName     // defaultInputValue
-        );
-
-        // UX Add-on: Allow pressing "Enter" to trigger the download
-        const modalInput = document.getElementById('modal-input-field');
-        if (modalInput) {
-            modalInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    document.getElementById('modal-ok').click();
-                }
-            });
+                console.log("Master template unpacked and saved successfully.");
+                
+                // 3. Reload to let the app's existing load logic grab the new keys
+                location.reload(); 
+            } catch (e) {
+                console.error("Error with Master Template:", e);
+                alert("Failed to reset: The Master Template string is not formatted correctly.");
+            }
         }
     }
-
 
     function openPrintService() {
         const printData = {
@@ -1997,19 +1702,62 @@
         console.log("Print cache cleared for fresh session.");
     });
 
-
     // This is the trigger that actually starts the engine
     window.addEventListener('DOMContentLoaded', () => {
         console.log("DOM Ready. Starting initApp...");
         initApp();
     });
 
-    setInterval(updateNowLine, 30000);
-    renderRoster();
-	renderDays();
-	renderTasks();
-	setMode('main');
-	renderRooms();
+    // --- CONSOLIDATED STARTUP ENGINE ---
+
+    function startViewer() {
+        console.log("Starting Viewer Engine...");
+        
+        // 1. Load data from localStorage or Master Template
+        // (This ensures 'tasks', 'rooms', and 'roster' are populated)
+        initApp(); 
+
+        // 2. Set the default state
+        // We force currentDay to 1 and isChecklistMode to false for a fresh start
+        currentDay = 1;
+        isChecklistMode = false;
+
+        // 3. Render the UI components in the correct order
+        renderRoster();
+        renderRooms(); // Populates your room list
+        renderDays();   // Draws the day tabs
+
+        // 4. Force the first render of the schedule
+        // Using setTimeout(0) ensures the browser has painted the containers 
+        // before we try to calculate task positions.
+        setTimeout(() => {
+            activateDay(1); // This internally calls renderTasks() and binds clicks
+            updateNowLine();
+        }, 0);
+    }
+
+    // Replace all existing window.addEventListener calls at the bottom with this:
+    window.addEventListener('load', () => {
+        // Clear print cache
+        localStorage.removeItem('crhp_print_exchange');
+        
+        // Fire the engine
+        startViewer();
+        
+        // Start the clock
+        setInterval(updateNowLine, 30000);
+    });
+
+    document.getElementById('timelineArea').addEventListener('click', (e) => {
+        if (e.target.id === 'timelineArea' || e.target.classList.contains('time-gutter')) {
+            if (currentFilter) {
+                currentFilter = null;
+                document.getElementById('nodes').classList.remove('filter-active');
+                document.querySelectorAll('.roster-pill').forEach(p => p.classList.remove('active-filter'));
+            }
+        }
+    });
+
 </script>
 </body>
 </html>
