@@ -9,7 +9,7 @@
             --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
             --bg-task: #a855f7; --text: #f8fafc; --danger: #ef4444;
             --border: #475569; --now: #ff4747;
-			--room: #5bfaa2;
+			--room: #2dd4bf;
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         body.modal-open { overflow: hidden; height: 100vh; }
@@ -593,11 +593,37 @@
             opacity: 1; /* Bring role back to full visibility when active */
         }
 
+        .btn-home {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%; /* Matches the help button shape */
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none; /* Removes underline from <a> tag */
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .btn-home:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+
     </style>
 </head>
 <body>
 <div class="fixed-top">
     <div style="display:flex; gap:10px; margin-bottom:15px; padding:0 15px;">
+        <button class="btn-home" onclick="window.open('index.html', '_blank')" title="CRHP Schedule Hub">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        </button>
         <label id="importBtn" for="importFile" style="flex:1; display:flex; align-items:center; justify-content:center; background:var(--accent); color:#0f172a; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer; font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1;">
             IMPORT SCHEDULE
         </label>
@@ -1159,8 +1185,8 @@
                     node.innerHTML = `
                         <div class="ultra-compact-text" style="font-size: 8px; font-weight:bold; height: 100%;">
                             <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
-                            ${t.room ? `<span class="uc-room">[${t.room}]</span>` : ''}
                             <span style="opacity:0.7">(${timeRangeStr})</span>
+                            ${t.room ? `<span class="uc-room">[${t.room}]</span>` : ''}
                             ${crewCount > 0 ? `<span class="uc-count">[${crewCount}p]</span>` : ''}
                         </div>`;
                 } else if (nodeHeight < 60) {
@@ -1170,9 +1196,9 @@
                         </div>
                         <div class="task-meta" style="font-size: 0.75rem;">
                             <div class="crew-list" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                ${t.room ? `<span class="room-label" style="color:var(--room); font-weight:bold;">${t.room}</span> | ` : ''}
-                                <span style="opacity:0.8">${timeRangeStr}</span> 
-                                ${slimNames ? `<span style="opacity:0.4"> | </span>${slimNames}` : ''}
+                                <span style="opacity:0.8">${timeRangeStr}</span> |
+                                ${t.room ? `<span class="room-label" style="color:var(--room); font-weight:bold;">${t.room}</span> |` : ''} 
+                                ${slimNames ? `<span style="opacity:0.4"> </span>${slimNames}` : ''}
                             </div>
                         </div>`;
                 } else {
@@ -1186,8 +1212,8 @@
                             <div class="task-title" style="margin-bottom:2px;">${t.name}</div>
                         </div>
                         <div class="task-meta">
-                            ${roomBlock} 
                             <div class="time-range">${timeRangeStr}</div>
+                            ${roomBlock} 
                             <div class="crew-list">${crewHtml}</div>
                         </div>`;
                 }
