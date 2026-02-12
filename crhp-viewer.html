@@ -1186,12 +1186,35 @@
                 // -----------------------------
 
                 if (nodeHeight < 40) {
+                    // ULTRA COMPACT - Enforced single line with smart truncation
                     node.innerHTML = `
-                        <div class="ultra-compact-text" style="font-size: 8px; font-weight:bold; height: 100%;">
-                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
-                            <span style="opacity:0.7">(${timeRangeStr})</span>
-                            ${t.room ? `<span class="uc-room">[${t.room}]</span>` : ''}
-                            ${crewCount > 0 ? `<span class="uc-count">[${crewCount}p]</span>` : ''}
+                        <div class="ultra-compact-text" style="
+                            font-size: 8px; 
+                            font-weight: bold; 
+                            height: 100%; 
+                            display: flex; 
+                            align-items: center; 
+                            white-space: nowrap; 
+                            overflow: hidden; 
+                            gap: 4px;
+                            padding: 0 2px;
+                        ">
+                            <span style="flex-shrink: 1; overflow: hidden; text-overflow: ellipsis;">${t.name}</span>
+                            <span style="opacity: 0.7; flex-shrink: 0;">(${timeRangeStr})</span>
+                            
+                            ${roomLabel ? `
+                                <span class="uc-room" style="
+                                    color: var(--room); 
+                                    flex-shrink: 1; 
+                                    overflow: hidden; 
+                                    text-overflow: ellipsis; 
+                                    max-width: 60px;
+                                ">[${roomLabel}]</span>
+                            ` : ''}
+                            
+                            ${crewCount > 0 ? `
+                                <span class="uc-count" style="flex-shrink: 0; opacity: 0.8;">[${crewCount}p]</span>
+                            ` : ''}
                         </div>`;
                 } else if (nodeHeight < 60) {
                     node.innerHTML = `
@@ -1732,5 +1755,6 @@
 </script>
 </body>
 </html>
+
 
 
