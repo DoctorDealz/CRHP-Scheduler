@@ -931,6 +931,11 @@
         checklist.forEach(i => { if(i.people) i.people = i.people.filter(p => p !== personKey); });
     }
 
+	function addRoster() { 
+        const n = document.getElementById('rosName').value, r = document.getElementById('rosRole').value; 
+        if(n){ roster.push({name:n, role:r || ""}); saveAll(); renderRoster(); document.getElementById('rosName').value=''; document.getElementById('rosRole').value=''; }
+    }
+
     let editingRosterIndex = null;
 
     function openRosterEdit(i) {
@@ -1055,6 +1060,13 @@
             </div>`
         ).join('');
     }
+
+	function addRoom() {
+        if (notify_if_readonly())
+            return;
+    	const n = document.getElementById('roomName').value;
+    	if(n) { rooms.push(n); saveAll(); renderRooms(); document.getElementById('roomName').value=''; }
+	}
 
     function openQuickRoomEdit() {
         const currentRoom = document.getElementById('editTaskRoom').value;
