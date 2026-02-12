@@ -1091,15 +1091,16 @@
                             transform: translateY(-50%);
                             margin: 0;
                         ">
-                            <span style="flex-shrink: 1; overflow: hidden; text-overflow: ellipsis;">${t.name}</span>
+                            <span style="flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; padding: 2px 0;">${t.name}</span>
                             <span style="opacity: 0.7; flex-shrink: 0;">(${timeRangeStr})</span>
                             
                             ${roomLabel ? `
                                 <span class="uc-room" style="
                                     color: var(--room); 
                                     flex-shrink: 1; 
-                                    overflow: hidden; 
+                                    overflow: hidden;
                                     text-overflow: ellipsis; 
+                                    padding: 2px 0;
                                     max-width: 55px;
                                 ">[${roomLabel}]</span>
                             ` : ''}
