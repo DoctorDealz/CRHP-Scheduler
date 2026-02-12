@@ -9,7 +9,7 @@
             --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
             --bg-task: #a855f7; --text: #f8fafc; --danger: #ef4444;
             --border: #475569; --now: #ff4747;
-			--room: #fcd34d;
+			--room: #5bfaa2;
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         body.modal-open { overflow: hidden; height: 100vh; }
@@ -218,7 +218,35 @@
         .time-range { font-size: 8px; opacity: 0.7; font-weight: bold; line-height: 1; margin-bottom: 2px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
-        .modal-content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid var(--accent); width: 88%; max-width: 400px; max-height: 85vh; overflow-y: auto; z-index: 10000; }
+
+        /* 1. First, make sure the overlay (background) is scrollable */
+        #taskModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            z-index: 9999;
+            overflow-y: auto; /* This enables the "page" scroll */
+            padding: 20px 0 200px 0;   /* Gives space at top/bottom when scrolling */
+        }
+
+        /* 2. Update the modal-content to remove the centering anchor */
+        .modal-content {
+            position: relative; /* Change from fixed to relative */
+            margin: 0 auto 40px auto;    /* Centers horizontally */
+            background: var(--card);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--accent);
+            width: 88%;
+            max-width: 400px;
+            /* Remove top/left/transform */
+            /* Remove max-height/overflow-y here so the WHOLE modal scrolls */
+        }
+
         .modal-cancel-x { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 20px; font-weight: bold; cursor: pointer; }
         .toggle-btn { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: none; color: #94a3b8; font-weight: bold; cursor: pointer; }
         .toggle-btn.active-main { border-color: var(--accent); color: var(--accent); background: rgba(56, 189, 248, 0.1); }
@@ -408,30 +436,30 @@
 
 		/* Container for each checkbox + label pair */
 		.status-row {
-		    display: flex;
-		    align-items: center;
-		    gap: 12px;
-		    margin-bottom: 12px;
-		    background: rgba(255,255,255,0.05);
-		    padding: 10px;
-		    border-radius: 8px;
-		    cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
 		}
 		
 		/* Make checkboxes slightly larger and easier to click on Mac */
 		.status-row input[type="checkbox"] {
-		    width: 20px;
-		    height: 20px;
-		    margin: 0;
-		    cursor: pointer;
+            width: 20px;
+            height: 20px;
+            margin: 0;
+            cursor: pointer;
 		}
 		
 		.status-row label {
-		    font-size: 0.95rem;
-		    font-weight: 500;
-		    margin: 0;
-		    cursor: pointer;
-		    flex: 1;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin: 0;
+            cursor: pointer;
+            flex: 1;
 		}
 
     </style>
@@ -479,14 +507,20 @@
         <input type="text" id="taskName" placeholder="Task Name">
         <textarea id="taskDesc" placeholder="Description" style="height:50px;"></textarea>
         <div id="laneToggle" class="toggle-group" style="display:flex; gap:5px; margin-bottom:10px;"><button id="tMain" class="toggle-btn" onclick="setMode('main')">Main</button><button id="tBg" class="toggle-btn" onclick="setMode('bg')">Background</button></div>
-        <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <select id="taskRoom" style="flex:1; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;">
-                <option value="">No Room Assigned</option>
-            </select>
-            <button class="btn-ctrl" style="padding:0 12px;" onclick="openQuickRoomEdit('taskRoom')">⚙️</button>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <div class="section-title" style="font-size: 0.7rem; opacity: 0.8; margin:0;">Assign Rooms</div>
+        </div>
+
+        <div id="roomCheckboxes" class="roster-grid" 
+            style="margin-bottom:10px; height: auto; min-height: 40px; border:1px solid var(--border); padding:8px; border-radius:6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
         </div>
         
-		<div id="rosterCheckboxes" class="roster-grid"></div>
+        <div class="section-title" style="font-size: 0.7rem; opacity: 0.8;">Assign Roster</div>
+        <div id="rosterCheckboxes" class="roster-grid" 
+            style="margin-bottom:10px; height: auto; min-height: 40px; border:1px solid var(--border); padding:8px; border-radius:6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+        </div>
+        
         <button onclick="addTask()" style="width:100%; padding:14px; background:var(--accent); color:#0f172a; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">ADD TASK</button>
     </div>
 </div>
@@ -519,27 +553,26 @@
             <div class="toggle-group" style="display:flex; gap:5px;"><button id="modalTMain" class="toggle-btn" onclick="setEditMode('main')">Main</button><button id="modalTBg" class="toggle-btn" onclick="setEditMode('bg')">Background</button></div>
         </div>
         <div id="modalTimeSection" style="display:flex; gap:5px; margin-top:10px;"><input type="time" id="editStartTime"><input type="time" id="editEndTime"></div>
-        <div class="section-title">Status</div>
-		<label class="status-row" for="modalPendingEdit">
-		    <input type="checkbox" id="modalPendingEdit">
-		    <span>Pending</span>
-		</label>
-		
-		<label class="status-row" for="modalCompleteEdit">
-		    <input type="checkbox" id="modalCompleteEdit">
-		    <span>Completed</span>
-		</label>
-        <div class="section-title">Assigned Room</div>
-        <div style="display:flex; gap:8px;">
-            <select id="editTaskRoom" style="flex:1; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white;"></select>
-            <button class="btn-ctrl" style="padding:0 12px;" onclick="openQuickRoomEdit('editTaskRoom')">⚙️</button>
-        </div>
         <div class="section-title">Task Description</div>
         <textarea id="modalDescEdit" placeholder="Description" oninput="autoSize(this)"></textarea>
+        
+        <div class="section-title">Status</div>
+        <label class="status-row" for="modalCompleteEdit">
+		<input type="checkbox" id="modalCompleteEdit">
+        <span>Completed</span>
+		</label>
+		<label class="status-row" for="modalPendingEdit">
+        <input type="checkbox" id="modalPendingEdit">
+        <span>Pending</span>
+		</label>
+		
+        <div class="section-title">Assigned Rooms</div>
+        <div id="modalRoomGrid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:5px; max-height:150px; overflow-y:auto; padding:5px; background:rgba(0,0,0,0.2); border-radius:6px;">
+        </div>
         <div class="section-title">Assigned Crew</div>
         <div id="modalRosterGrid" class="roster-grid"></div>
-        <button class="btn-ctrl" style="background:var(--danger); color:white; width:100%; margin-bottom:10px;" onclick="deleteCurrentTask()">🗑 Delete</button>
-        <button class="btn-ctrl" style="width:100%; background:var(--accent); color:#0f172a;" onclick="closeModal(true)">Save Changes</button>
+        <button class="btn-ctrl" style="width:100%; background:var(--accent); color:#0f172a; margin-bottom:10px;" onclick="closeModal(true)">Save Changes</button>
+        <button class="btn-ctrl" style="background:var(--danger); color:white; width:100%;" onclick="deleteCurrentTask()">🗑 Delete</button>
     </div>
 </div>
 
@@ -729,8 +762,10 @@
     }
 
     function openModal(index, fromChecklist = false) {
-        activeTaskIndex = index; document.body.classList.add('modal-open');
+        activeTaskIndex = index; 
+        document.body.classList.add('modal-open');
         const t = fromChecklist ? checklist[index] : tasks[index];
+        
         document.getElementById('modalHeader').innerText = fromChecklist ? "Edit Checklist Item" : "Edit Task";
         document.getElementById('editTaskName').value = t.name;
         document.getElementById('modalDescEdit').value = t.desc || "";
@@ -746,145 +781,163 @@
             document.getElementById('editStartTime').value = t.start;
             document.getElementById('editEndTime').value = t.end;
             
-            if(document.getElementById('editTaskRoom')) {
-                document.getElementById('editTaskRoom').value = t.room || "";
-            }
+            // --- CHANGED: Use renderEditRooms instead of setting value ---
+            // Checks for t.rooms array first, falls back to legacy t.room string
+            renderEditRooms(t.rooms || t.room); 
 
             setEditMode(t.type || 'main');
         }
-        renderEditRoster(t.people || []); document.getElementById('taskModal').style.display = 'block';
-		const pendingBox = document.getElementById('modalPendingEdit');
-	    const completeBox = document.getElementById('modalCompleteEdit');
-	
-	    pendingBox.onchange = () => {
-	        if (pendingBox.checked) completeBox.checked = false;
-	    };
-	
-	    completeBox.onchange = () => {
-	        if (completeBox.checked) pendingBox.checked = false;
-	    };
-	
-	    document.getElementById('taskModal').style.display = 'block';
+        
+        renderEditRoster(t.people || []); 
+        
+        // Setup Exclusivity Logic
+        const pendingBox = document.getElementById('modalPendingEdit');
+        const completeBox = document.getElementById('modalCompleteEdit');
+
+        pendingBox.onchange = () => {
+            if (pendingBox.checked) completeBox.checked = false;
+        };
+
+        completeBox.onchange = () => {
+            if (completeBox.checked) pendingBox.checked = false;
+        };
+
+        document.getElementById('taskModal').style.display = 'block';
     }
 
     function closeModal(save) {
-	    if(save) {
-	        const isEditingChecklist = document.getElementById('modalHeader').innerText.includes("Checklist");
-	        const t = isEditingChecklist ? checklist[activeTaskIndex] : tasks[activeTaskIndex];
-	        
-	        const name = document.getElementById('editTaskName').value;
-	        const desc = document.getElementById('modalDescEdit').value;
-	        const crew = Array.from(document.querySelectorAll('#modalRosterGrid input:checked')).map(c => c.value);
-	        
-	        // Capture the status states
-	        const pending = document.getElementById('modalPendingEdit').checked;
-	        const complete = document.getElementById('modalCompleteEdit').checked;
-	        
-	        const selectedRoom = document.getElementById('editTaskRoom') ? document.getElementById('editTaskRoom').value : "";
-	
-	        if(isEditingChecklist) {
-	            // Checklist items use .done for completion
-	            t.name = name; 
-	            t.desc = desc; 
-	            t.people = crew; 
-	            t.pending = pending; 
-	            t.done = complete;
-	        } else {
-	            let s = document.getElementById('editStartTime').value;
-	            let e = document.getElementById('editEndTime').value;
-	            if (e === "00:00") { e = "23:59"; }
-	            
-	            // Logic for handling midnight/next-day spans
-	            if(getMins(e) < getMins(s)) {
-	                const originalDay = t.day;
-	                tasks.splice(activeTaskIndex, 1);
-	                
-	                // Segment 1 (Ends at midnight)
-	                tasks.push({ 
-	                    day: originalDay, start: s, end: "23:59", 
-	                    name, desc, people: crew, type: editMode, room: selectedRoom, 
-	                    pending, complete 
-	                });
-	                
-	                if (originalDay === totalDays) { totalDays++; renderDays(); }
-	                
-	                // Segment 2 (Starts at midnight next day)
-	                tasks.push({ 
-	                    day: originalDay + 1, start: "00:00", end: e, 
-	                    name, desc, people: crew, type: editMode, room: selectedRoom, 
-	                    pending, complete 
-	                });
-	            } else {
-	                // Normal task update
-	                t.name = name; 
-	                t.desc = desc; 
-	                t.people = crew; 
-	                t.pending = pending; 
-	                t.complete = complete;
-	                t.start = s; 
-	                t.end = e; 
-	                t.type = editMode; 
-	                t.room = selectedRoom;
-	            }
-	        }
-	        saveAll(); 
-	        isChecklistMode ? renderChecklist() : renderTasks();
-	    }
-	
-	    // Modal Cleanup
-	    document.body.classList.remove('modal-open'); 
-	    document.getElementById('taskModal').style.display = 'none';
-	    
-	    if(document.getElementById('editTaskRoom')) {
-	        document.getElementById('editTaskRoom').value = "";
-	    }
-	    
-	    document.querySelectorAll('#modalRosterGrid input').forEach(cb => cb.checked = false);
-	}
+        if(save) {
+            const isEditingChecklist = document.getElementById('modalHeader').innerText.includes("Checklist");
+            const t = isEditingChecklist ? checklist[activeTaskIndex] : tasks[activeTaskIndex];
+            
+            const name = document.getElementById('editTaskName').value;
+            const desc = document.getElementById('modalDescEdit').value;
+            const crew = Array.from(document.querySelectorAll('#modalRosterGrid input:checked')).map(c => c.value);
+            
+            // Capture Status
+            const pending = document.getElementById('modalPendingEdit').checked;
+            const complete = document.getElementById('modalCompleteEdit').checked;
+
+            // --- CHANGED: Capture Rooms as Array ---
+            const roomArray = Array.from(document.querySelectorAll('#modalRoomGrid input:checked')).map(c => c.value);
+            const roomString = roomArray.join(', '); // For legacy support/display
+            // --------------------------------------
+
+            if(isEditingChecklist) {
+                t.name = name; 
+                t.desc = desc; 
+                t.people = crew; 
+                t.pending = pending; 
+                t.done = complete;
+            } else {
+                let s = document.getElementById('editStartTime').value;
+                let e = document.getElementById('editEndTime').value;
+                if (e === "00:00") { e = "23:59"; }
+                
+                if(getMins(e) < getMins(s)) {
+                    // Midnight Span Logic
+                    const originalDay = t.day;
+                    tasks.splice(activeTaskIndex, 1);
+                    
+                    // Part 1
+                    tasks.push({ 
+                        day: originalDay, start: s, end: "23:59", 
+                        name, desc, people: crew, type: editMode, 
+                        rooms: roomArray, room: roomString, // Save both
+                        pending, complete 
+                    });
+                    
+                    if (originalDay === totalDays) { totalDays++; renderDays(); }
+
+                    // Part 2
+                    tasks.push({ 
+                        day: originalDay + 1, start: "00:00", end: e, 
+                        name, desc, people: crew, type: editMode, 
+                        rooms: roomArray, room: roomString, // Save both
+                        pending, complete 
+                    });
+                } else {
+                    // Normal Update
+                    t.name = name; 
+                    t.desc = desc; 
+                    t.people = crew; 
+                    t.pending = pending; 
+                    t.complete = complete;
+                    t.start = s; 
+                    t.end = e; 
+                    t.type = editMode; 
+                    
+                    // Save Rooms
+                    t.rooms = roomArray;
+                    t.room = roomString; 
+                }
+            }
+            saveAll(); 
+            isChecklistMode ? renderChecklist() : renderTasks();
+        }
+
+        // Cleanup
+        document.body.classList.remove('modal-open'); 
+        document.getElementById('taskModal').style.display = 'none';
+        
+        // Clear selections
+        document.querySelectorAll('#modalRosterGrid input').forEach(cb => cb.checked = false);
+        document.querySelectorAll('#modalRoomGrid input').forEach(cb => cb.checked = false);
+    }
 
     function addTask() {
-		const n = document.getElementById('taskName').value, d = document.getElementById('taskDesc').value;
-		const p = Array.from(document.querySelectorAll('#rosterCheckboxes input:checked')).map(c => c.value);
-		const selectedRoom = document.getElementById('taskRoom').value; // Room captured here
-		
-		if(!n) return;
-		if(isChecklistMode) {
-			checklist.push({ name: n, desc: d, people: p, done: false, pending: false });
-		} else {
-			let s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
-			if (e === "00:00") { e = "23:59"; }
-			
-			if(getMins(e) < getMins(s)) {
-				// Task crosses midnight - Day 1
-				tasks.push({ 
-					day: currentDay, start: s, end: "23:59", name: n, desc: d, people: p, type: mode, 
-					room: selectedRoom, 
-					pending: false, complete: false 
-				});
-				if (currentDay === totalDays) { totalDays++; renderDays(); }
-				// Task crosses midnight - Day 2
-				tasks.push({ 
-					day: currentDay + 1, start: "00:00", end: e, name: n, desc: d, people: p, type: mode, 
-					room: selectedRoom, 
-					pending: false, complete: false 
-				});
-			} else {
-				// Standard single day
-				tasks.push({ 
-					day: currentDay, start: s, end: e, name: n, desc: d, people: p, type: mode, 
-					room: selectedRoom, 
-					pending: false, complete: false 
-				});
-			}
-		}
-		saveAll(); 
-		isChecklistMode ? renderChecklist() : renderTasks();
-		document.getElementById('taskName').value = ''; 
-		document.getElementById('taskDesc').value = '';
-		document.getElementById('taskRoom').value = '';
-		document.querySelectorAll('#rosterCheckboxes input').forEach(cb => cb.checked = false);
-		
-	}
+        const n = document.getElementById('taskName').value, d = document.getElementById('taskDesc').value;
+        const p = Array.from(document.querySelectorAll('#rosterCheckboxes input:checked')).map(c => c.value);
+        
+        // --- CHANGED: Capture Multiple Rooms from the new checkbox grid ---
+        const selectedRooms = Array.from(document.querySelectorAll('#roomCheckboxes input:checked')).map(c => c.value);
+        const roomStr = selectedRooms.join(', '); // Legacy string support
+        // ------------------------------------------------------------------
+
+        if(!n) return;
+        if(isChecklistMode) {
+            checklist.push({ name: n, desc: d, people: p, done: false, pending: false });
+        } else {
+            let s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
+            if (e === "00:00") { e = "23:59"; }
+            
+            if(getMins(e) < getMins(s)) {
+                // Task crosses midnight - Day 1
+                tasks.push({ 
+                    day: currentDay, start: s, end: "23:59", name: n, desc: d, people: p, type: mode, 
+                    rooms: selectedRooms, // Array
+                    room: roomStr,        // String
+                    pending: false, complete: false 
+                });
+                if (currentDay === totalDays) { totalDays++; renderDays(); }
+                // Task crosses midnight - Day 2
+                tasks.push({ 
+                    day: currentDay + 1, start: "00:00", end: e, name: n, desc: d, people: p, type: mode, 
+                    rooms: selectedRooms, // Array
+                    room: roomStr,        // String
+                    pending: false, complete: false 
+                });
+            } else {
+                // Standard single day
+                tasks.push({ 
+                    day: currentDay, start: s, end: e, name: n, desc: d, people: p, type: mode, 
+                    rooms: selectedRooms, // Array
+                    room: roomStr,        // String
+                    pending: false, complete: false 
+                });
+            }
+        }
+        
+        saveAll(); 
+        isChecklistMode ? renderChecklist() : renderTasks();
+        
+        // --- RESET FORM ---
+        document.getElementById('taskName').value = ''; 
+        document.getElementById('taskDesc').value = '';
+        
+        // Clear both Roster and Room checkboxes
+        document.querySelectorAll('#rosterCheckboxes input, #roomCheckboxes input').forEach(cb => cb.checked = false);
+    }
 
     const formatTo12h = (t) => { 
         if(!t) return ""; 
@@ -951,53 +1004,56 @@
                     const [n, r] = p.split(' ('); return `${n} <small>(${r}</small>`;
                 }).join(', ') : '';
 
+                // --- CHANGED: Room Logic to handle Arrays ---
+                const roomLabel = (t.rooms && t.rooms.length > 0) ? t.rooms.join(', ') : (t.room || "");
+                const roomBlock = roomLabel ? `<div class="room-label" style="margin-bottom:2px; color:var(--room); font-weight:bold;">${roomLabel}</div>` : "";
+                // -------------------------------------------
+
                 const showButtons = maxSimultaneous < 3;
                 const statusHtml = showButtons ? `
                     <div class="status-toggles">
                         <div class="tiny-toggle ${t.pending ? 'active' : ''}" onclick="toggleStatus(${tasks.indexOf(t)}, 'P', event)">P</div>
                         <div class="tiny-toggle ${t.complete ? 'active' : ''}" onclick="toggleStatus(${tasks.indexOf(t)}, 'C', event)">C</div>
                     </div>` : '';
-					
-				const roomText = t.room ? `<span class="room-label">(${t.room})</span>` : "";
-				const roomBlock = t.room ? `<div class="room-label" style="margin-bottom:2px;">${t.room}</div>` : "";
 
-				if (nodeHeight < 40) {
-					// ULTRA COMPACT: Fixed line alignment and custom colors
-					node.innerHTML = `
-						<div class="ultra-compact-text" style="font-size: 8px; font-weight:bold; height: 100%;">
-							<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
-							${t.room ? `<span class="uc-room">[${t.room}]</span>` : ''}
-							<span style="opacity:0.7">(${timeRangeStr})</span>
-							${crewCount > 0 ? `<span class="uc-count">[${crewCount}p]</span>` : ''}
-						</div>`;
-				} else if (nodeHeight < 60) {
-					// MEDIUM: Keep as is
-					node.innerHTML = `
-						<div class="status-header-row">
-							<div class="task-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</div>
-							${statusHtml}
-						</div>
-						<div class="task-meta" style="font-size: 0.75rem;">
-							<div class="crew-list" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-								${t.room ? `<span class="room-label" style="color:var(--room); font-weight:bold;">${t.room}</span> | ` : ''}
-								<span style="opacity:0.8">${timeRangeStr}</span> 
-								${slimNames ? `<span style="opacity:0.4"> | </span>${slimNames}` : ''}
-							</div>
-						</div>`;
-				} else {
-					// LARGE: Push room to its own line to prevent overlap crowding
-					node.innerHTML = `
-						<div class="status-header-row">
-							<div class="task-title" style="margin-bottom:2px;">${t.name}</div>
-							${statusHtml}
-						</div>
-						<div class="task-meta">
-							${roomBlock} <div class="time-range">${timeRangeStr}</div>
-							<div class="crew-list">
-								${nodeHeight < 85 ? slimNames : '<span class="assigned-label">Assigned:</span> ' + fullCrew}
-							</div>
-						</div>`;
-				}
+                if (nodeHeight < 40) {
+                    // ULTRA COMPACT
+                    node.innerHTML = `
+                        <div class="ultra-compact-text" style="font-size: 8px; font-weight:bold; height: 100%;">
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</span>
+                            ${roomLabel ? `<span class="uc-room">[${roomLabel}]</span>` : ''}
+                            <span style="opacity:0.7">(${timeRangeStr})</span>
+                            ${crewCount > 0 ? `<span class="uc-count">[${crewCount}p]</span>` : ''}
+                        </div>`;
+                } else if (nodeHeight < 60) {
+                    // MEDIUM
+                    node.innerHTML = `
+                        <div class="status-header-row">
+                            <div class="task-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.name}</div>
+                            ${statusHtml}
+                        </div>
+                        <div class="task-meta" style="font-size: 0.75rem;">
+                            <div class="crew-list" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                ${roomLabel ? `<span class="room-label" style="color:var(--room); font-weight:bold;">${roomLabel}</span> | ` : ''}
+                                <span style="opacity:0.8">${timeRangeStr}</span> 
+                                ${slimNames ? `<span style="opacity:0.4"> | </span>${slimNames}` : ''}
+                            </div>
+                        </div>`;
+                } else {
+                    // LARGE
+                    node.innerHTML = `
+                        <div class="status-header-row">
+                            <div class="task-title" style="margin-bottom:2px;">${t.name}</div>
+                            ${statusHtml}
+                        </div>
+                        <div class="task-meta">
+                            ${roomBlock} 
+                            <div class="time-range">${timeRangeStr}</div>
+                            <div class="crew-list">
+                                ${nodeHeight < 85 ? slimNames : '<span class="assigned-label">Assigned:</span> ' + fullCrew}
+                            </div>
+                        </div>`;
+                }
                 nodes.appendChild(node);
             });
         });
@@ -1120,43 +1176,71 @@
     });
 
     function renderRoster() {
-        // Main Display List
+        // 1. Main Display List (The pills at the top)
         document.getElementById('rosterDisplay').innerHTML = roster.map((p, i) => 
             `<div onclick="openRosterEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer; display:inline-block; margin:2px;">
                 ${p.name} <small>(${p.role})</small> 
             </div>`
         ).join('');
         
-        // Checklist in the Task Modal
-        document.getElementById('rosterCheckboxes').innerHTML = roster.map((p, i) => 
-            `<div class="roster-item" style="display:flex; align-items:center; justify-content:space-between;">
-                <div style="flex:1;" onclick="const ck=this.parentElement.querySelector('input'); ck.checked=!ck.checked; updateTaskCrewFromCheckboxes();">
-                    <input type="checkbox" value="${p.name} (${p.role})" onclick="event.stopPropagation()">
-                    <span>${p.name} <small style="color:var(--accent); font-weight:bold;">(${p.role})</small></span>
+        // 2. Task Creator Grid (Updated for 3-column expanding layout)
+        const creatorRosterGrid = document.getElementById('rosterCheckboxes');
+        if (creatorRosterGrid) {
+            creatorRosterGrid.innerHTML = roster.map((p, i) => {
+                const fullName = `${p.name} (${p.role})`;
+                return `
+                    <div class="roster-item" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; background: rgba(56, 189, 248, 0.05); margin-bottom: 2px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.1);">
+                        <div style="display: flex; align-items: center; flex: 1; cursor: pointer; overflow: hidden;" onclick="const ck=this.querySelector('input'); ck.checked=!ck.checked;">
+                            <input type="checkbox" value="${fullName}" onclick="event.stopPropagation()" style="accent-color:var(--accent);">
+                            <span style="margin-left: 8px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${p.name} <small style="color:var(--accent); font-weight:bold; font-size: 9px;">(${p.role})</small>
+                            </span>
+                        </div>
+                        <span onclick="event.stopPropagation(); openRosterEdit(${i})" style="cursor: pointer; padding: 0 2px; opacity: 0.6; font-size: 12px;">⚙️</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    function renderEditRooms(assignedRooms) {
+        const container = document.getElementById('modalRoomGrid');
+        if (!container) return;
+
+        let currentRooms = Array.isArray(assignedRooms) ? assignedRooms : (assignedRooms ? [assignedRooms] : []);
+
+        container.innerHTML = rooms.map((r, i) => {
+            const isChecked = currentRooms.includes(r) ? 'checked' : '';
+            return `
+                <div class="roster-item" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; background: rgba(255,255,255,0.05); margin-bottom: 2px; border-radius: 4px;">
+                    <div style="display: flex; align-items: center; flex: 1; cursor: pointer;" onclick="const ck=this.querySelector('input'); ck.checked=!ck.checked;">
+                        <input type="checkbox" value="${r}" ${isChecked} onclick="event.stopPropagation()" style="accent-color:var(--room);">
+                        <span style="margin-left: 8px; font-size: 0.9rem; color:var(--room);">${r}</span>
+                    </div>
+                    <span onclick="event.stopPropagation(); openRoomEdit(${i})" style="cursor: pointer; padding: 0 5px; opacity: 0.6; font-size: 14px;">⚙️</span>
                 </div>
-                <span onclick="openRosterEdit(${i})" style="cursor:pointer; padding:0 10px; opacity:0.5;">⚙️</span>
-            </div>`
-        ).join('');
+            `;
+        }).join('');
     }
 
 	function addRoom() {
 	    // 1. Get the input
-	    const input = document.getElementById('roomName');
-	    const n = input.value.trim();
+        const input = document.getElementById('roomName');
+        const n = input.value.trim();
 	
-	    if (n) {
+        if (n) {
 	        // 2. Update the array
-	        rooms.push(n);
+            rooms.push(n);
 	
 	        // 3. Use your existing saveAll function
-	        saveAll(); 
+            saveAll(); 
 	
 	        // 4. Refresh the UI
-	        renderRooms(); 
+            renderRooms(); 
 	
 	        // 5. Clear the input
-	        input.value = '';
-	    }
+            input.value = '';
+        }
 	}
 
     function openQuickRoomEdit() {
@@ -1176,16 +1260,35 @@
     }
 
     function renderRooms() {
-        document.getElementById('roomDisplay').innerHTML = rooms.map((r, i) => 
-            `<div onclick="openRoomEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; border:1px solid var(--room); cursor:pointer;">
-                ${r}
-            </div>`
-        ).join('');
-        
-        // Update the dropdowns
-        const options = `<option value="">No Room Assigned</option>` + rooms.map(r => `<option value="${r}">${r}</option>`).join('');
-        document.getElementById('taskRoom').innerHTML = options;
-        document.getElementById('editTaskRoom').innerHTML = options;
+        // 1. Management List at the bottom
+        const display = document.getElementById('roomDisplay');
+        if (display) {
+            display.innerHTML = rooms.map((r, i) => 
+                `<div onclick="openRoomEdit(${i})" style="background:#334155; padding:4px 8px; border-radius:6px; font-size:11px; border:1px solid var(--room); cursor:pointer;">
+                    ${r}
+                </div>`
+            ).join('');
+        }
+
+        // 2. Task Creator Grid (Matching the Roster style)
+        const creatorGrid = document.getElementById('roomCheckboxes');
+        if (creatorGrid) {
+            creatorGrid.innerHTML = rooms.map((r, i) => `
+                <div class="roster-item" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; background: rgba(252, 211, 77, 0.05); margin-bottom: 2px; border-radius: 4px; border: 1px solid rgba(252, 211, 77, 0.1);">
+                    <div style="display: flex; align-items: center; flex: 1; cursor: pointer;" onclick="const ck=this.querySelector('input'); ck.checked=!ck.checked;">
+                        <input type="checkbox" value="${r}" onclick="event.stopPropagation()" style="accent-color:var(--room);">
+                        <span style="margin-left: 8px; font-size: 11px; color:var(--room);">${r}</span>
+                    </div>
+                    <span onclick="event.stopPropagation(); openRoomEdit(${i})" style="cursor: pointer; padding: 0 5px; opacity: 0.6; font-size: 12px;">⚙️</span>
+                </div>
+            `).join('');
+        }
+
+        // 3. Sync Modal if open
+        if (document.getElementById('taskModal').style.display === 'block') {
+            const t = isChecklistMode ? checklist[activeTaskIndex] : tasks[activeTaskIndex];
+            renderEditRooms(t ? (t.rooms || t.room) : []);
+        }
     }
 
     let editingRoomIndex = null;
@@ -1337,29 +1440,56 @@
         }
     }
     
-	function importData(e) {
-		const r = new FileReader();
-		r.onload = (ev) => {
-			try {
-				const d = JSON.parse(ev.target.result);
-				tasks = d.tasks || [];
-				checklist = d.checklist || [];
-				roster = d.roster || [];
-				rooms = d.rooms || []; // Crucial: Import the rooms
-				totalDays = d.totalDays || 1;
-				
-				saveAll();
-				renderRoster();
-				renderRooms(); // Crucial: Show the imported rooms
-				renderDays();
-				renderTasks();
-				alert("Import Successful!");
-			} catch(err) {
-				alert("Error importing file.");
-			}
-		};
-		r.readAsText(e.target.files[0]);
-	}
+    function importData(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 1. Ask for confirmation first, since this overwrites all current data
+        showModal(
+            "Import Schedule?",
+            "This will replace all your current tasks, roster, and rooms with the data from this file. Are you sure?",
+            (confirmed) => {
+                if (!confirmed) return;
+
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    try {
+                        const d = JSON.parse(ev.target.result);
+                        
+                        // Update global variables
+                        tasks = d.tasks || [];
+                        checklist = d.checklist || [];
+                        roster = d.roster || [];
+                        rooms = d.rooms || [];
+                        totalDays = d.totalDays || 1;
+                        
+                        // Sync and Refresh UI
+                        saveAll();
+                        renderRoster();
+                        renderRooms();
+                        renderDays();
+                        renderTasks();
+                        
+                        // 2. Success Modal
+                        showModal("Import Successful", "Your schedule data has been loaded successfully.", null, false, "Great!");
+                        
+                    } catch(err) {
+                        console.error(err);
+                        // 3. Error Modal
+                        showModal("Import Error", "The file provided is not a valid schedule JSON file.", null, false, "OK", "danger");
+                    }
+                };
+                r.readAsText(file);
+                
+                // Clear the input so the same file can be imported again if needed
+                e.target.value = '';
+            },
+            true, // isConfirm = true
+            "Yes, Import",
+            "info",
+            "Cancel"
+        );
+    }
 
     
     function deleteDay(e, n) { 
