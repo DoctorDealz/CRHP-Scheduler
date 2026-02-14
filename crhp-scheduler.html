@@ -1135,58 +1135,41 @@
                             </div>
                         </div>`;
                 } else {
-                    // LARGE VIEW - All fields protected against horizontal squishing
+                    // LARGE VIEW - Protection & Dynamic Row Merging
                     const hasCrew = crewCount > 0;
+                    const isMediumLarge = nodeHeight < 85; // The "In-Between" zone
+                    
+                    // Determine Crew HTML
                     const crewHtml = hasCrew 
-                        ? (nodeHeight < 85 ? slimNames : `<span class="assigned-label">Assigned:</span> ${fullCrew}`)
+                        ? (isMediumLarge ? slimNames : `<span class="assigned-label">Assigned:</span> ${fullCrew}`)
                         : "";
                     
-                    const separatorStyle = hasCrew ? `border-top: 1px solid rgba(0,0,0,0.08); margin-top: 0px; padding-top: 0px;` : '';
+                    // NEW: Logic to merge Room and Crew if space is tight
+                    let metaContentHtml = '';
+                    if (isMediumLarge && t.room && hasCrew) {
+                        // Combined line: Room | Names
+                        metaContentHtml = `
+                            <div style="color: var(--room); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; font-size: 0.85em;">
+                                ${t.room} <span style="color: var(--text); opacity: 0.4; font-weight: normal; margin: 0 4px;">|</span> 
+                                <span style="color: var(--text); opacity: 0.7; font-weight: normal;">${slimNames}</span>
+                            </div>`;
+                    } else {
+                        // Standard Stacked Layout
+                        metaContentHtml = `
+                            ${t.room ? `<div class="room-label" style="color: var(--room); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${t.room}</div>` : ""} 
+                            <div class="crew-list" style="${hasCrew ? 'border-top: 1px solid rgba(0,0,0,0.08); margin-top: 4px; padding-top: 4px;' : ''} overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; font-size: 0.85em;">
+                                ${crewHtml}
+                            </div>`;
+                    }
 
                     node.innerHTML = `
                         <div class="status-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; width: 100%; overflow: hidden;">
-                            <div class="task-title" style="
-                                white-space: nowrap; 
-                                overflow: visible; 
-                                text-overflow: ellipsis; 
-                                flex-grow: 1; 
-                                min-width: 0; 
-                                font-weight: bold;
-                            ">${t.name}</div>
+                            <div class="task-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; min-width: 0; font-weight: bold;">${t.name}</div>
                             ${statusHtml}
                         </div>
                         <div class="task-meta" style="width: 100%; overflow: hidden; display: flex; flex-direction: column;">
-                            <div class="time-range" style="
-                                font-size: 0.85em; 
-                                opacity: 0.8; 
-                                white-space: nowrap; 
-                                overflow: visible; 
-                                text-overflow: ellipsis;
-                                width: 100%;
-                            ">${timeRangeStr}</div>
-                            
-                            ${roomLabel ? `
-                                <div class="room-label" style="
-                                    color: var(--room); 
-                                    font-weight: bold; 
-                                    white-space: nowrap; 
-                                    overflow: visible; 
-                                    text-overflow: ellipsis;
-                                    width: 100%;
-                                    font-size: 0.85em;
-                                ">${roomLabel}</div>
-                            ` : ""} 
-
-                            <div class="crew-list" style="
-                                ${separatorStyle} 
-                                overflow: visible; 
-                                text-overflow: ellipsis; 
-                                display: -webkit-box; 
-                                -webkit-line-clamp: 2; 
-                                -webkit-box-orient: vertical; 
-                                white-space: normal;
-                                font-size: 0.75em;
-                            ">${crewHtml}</div>
+                            <div class="time-range" style="font-size: 0.85em; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${timeRangeStr}</div>
+                            ${metaContentHtml}
                         </div>`;
                 }
                 nodes.appendChild(node);
