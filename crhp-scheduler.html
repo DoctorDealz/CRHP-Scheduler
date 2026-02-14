@@ -1062,7 +1062,7 @@
 
                 // 2. Room Logic
                 const roomLabel = (t.rooms && t.rooms.length > 0) ? t.rooms.join(', ') : (t.room || "");
-                const roomBlock = roomLabel ? `<div class="room-label" style="margin-bottom:2px; color:var(--room); font-weight:bold;">${roomLabel}</div>` : "";
+                const roomBlock = roomLabel ? `<div class="room-label" style="margin-bottom:0px; color:var(--room); font-weight:bold;">${roomLabel}</div>` : "";
 
                 const showButtons = maxSimultaneous < 3;
                 const statusHtml = showButtons ? `
@@ -1173,7 +1173,7 @@
                                     overflow: visible; 
                                     text-overflow: ellipsis;
                                     width: 100%;
-                                    font-size: 0.55em;
+                                    font-size: 0.85em;
                                 ">${roomLabel}</div>
                             ` : ""} 
 
@@ -1185,7 +1185,7 @@
                                 -webkit-line-clamp: 2; 
                                 -webkit-box-orient: vertical; 
                                 white-space: normal;
-                                font-size: 0.45em;
+                                font-size: 0.75em;
                             ">${crewHtml}</div>
                         </div>`;
                 }
