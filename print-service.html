@@ -4,10 +4,27 @@
     <meta charset="UTF-8">
     <title>CRHP Print Service</title>
     <style>
-        /* 1. Hide everything by default */
+        /* ========== THEME & ROOT ========== */
+        :root {
+            --accent: #38bdf8;
+            --main-bg: #f0f9ff;
+            --bg-lane-bg: #fdf4ff;
+            --border: #cbd5e1;
+            --text: #0f172a;
+        }
+
+        /* ========== BASE STYLES ========== */
+        body { 
+            font-family: "Segoe UI", Tahoma, sans-serif; 
+            background: #f1f5f9; 
+            color: #334155; 
+            padding: 20px; 
+            margin: 0;
+            line-height: 1.4;
+        }
         #output, .no-print { display: none; }
 
-        /* 2. Throbber Logic */
+        /* ========== LOADING STATE (THROBBER) ========== */
         #throbber {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -17,11 +34,6 @@
             align-items: center; justify-content: center;
             z-index: 9999;
         }
-
-        .data-ready #output, 
-        .data-ready .no-print { display: block; }
-        .data-ready #throbber { display: none !important; }
-
         .spinner {
             width: 50px; height: 50px;
             border: 5px solid #cbd5e1;
@@ -33,24 +45,74 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .throbber-text { font-family: sans-serif; color: #334155; font-weight: bold; }
 
-        :root {
-            --accent: #38bdf8;
-            --main-bg: #f0f9ff;
-            --bg-lane-bg: #fdf4ff;
-            --border: #cbd5e1;
-            --text: #0f172a;
-        }
+        /* ========== DATA-READY STATE ========== */
+        .data-ready #output, 
+        .data-ready .no-print { display: block; }
+        .data-ready #throbber { display: none !important; }
 
-        body { 
-            font-family: "Segoe UI", Tahoma, sans-serif; 
-            background: #f1f5f9; 
-            color: #334155; 
+        /* ========== CONTROLS & BUTTONS ========== */
+        .no-print { 
+            background: white; 
             padding: 20px; 
-            margin: 0;
-            line-height: 1.4;
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
+            max-width: 900px; 
+            margin: 0 auto 30px auto; 
+            border-left: 5px solid var(--accent); 
         }
 
-        /* PRINT SPECIFIC FIXES */
+        /* ========== PAGE LAYOUT ========== */
+        .day-page { 
+            background: white; 
+            width: 10.5in; 
+            min-height: 7.5in; 
+            padding: 0.3in; 
+            margin: 0 auto 40px auto; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
+            box-sizing: border-box; 
+        }
+
+        /* ========== HEADER STYLES ========== */
+        h1 { margin: 0; color: var(--text); font-size: 24pt; border-bottom: 3px solid var(--text); padding-bottom: 5px; }
+        .day-num { font-size: 20pt; color: var(--accent); margin-bottom: 15px; font-weight: bold; }
+
+        /* ========== TABLE STYLES ========== */
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            border: 2px solid var(--text);
+        }
+        .schedule-table th {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+            font-size: 10pt;
+            text-transform: uppercase;
+            color: var(--text);
+        }
+        .schedule-table td {
+            border: 1px solid var(--border);
+            vertical-align: top;
+            padding: 0;
+        }
+        .time-cell {
+            text-align: center; 
+            font-weight: bold; 
+            background: #f8fafc; 
+            padding: 10px !important;
+            font-size: 10pt;
+            color: #475569;
+        }
+        .task-container {
+            padding: 8px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ========== PRINT MEDIA QUERIES ========== */
         @media print {
             @page {
                 size: letter landscape;
@@ -75,7 +137,7 @@
                 break-after: page;
             }
 
-            /* PREVENTS TASKS FROM CUTTING OFF */
+            /* Prevents tasks from cutting off */
             td {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -84,69 +146,6 @@
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-        }
-
-        .no-print { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
-            max-width: 900px; 
-            margin: 0 auto 30px auto; 
-            border-left: 5px solid var(--accent); 
-        }
-
-        .day-page { 
-            background: white; 
-            width: 10.5in; 
-            min-height: 7.5in; 
-            padding: 0.3in; 
-            margin: 0 auto 40px auto; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
-            box-sizing: border-box; 
-        }
-        
-        /* Larger Day Header */
-        h1 { margin: 0; color: var(--text); font-size: 24pt; border-bottom: 3px solid var(--text); padding-bottom: 5px; }
-        .day-num { font-size: 20pt; color: var(--accent); margin-bottom: 15px; font-weight: bold; }
-
-        .schedule-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            border: 2px solid var(--text);
-        }
-
-        .schedule-table th {
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            padding: 10px;
-            text-align: center;
-            font-size: 10pt;
-            text-transform: uppercase;
-            color: var(--text);
-        }
-
-        .schedule-table td {
-            border: 1px solid var(--border);
-            vertical-align: top;
-            padding: 0;
-        }
-
-        .time-cell {
-            text-align: center; 
-            font-weight: bold; 
-            background: #f8fafc; 
-            padding: 10px !important;
-            font-size: 10pt;
-            color: #475569;
-        }
-
-        .task-container {
-            padding: 8px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
         }
     </style>
 </head>
@@ -171,6 +170,7 @@
     <div id="output"></div>
 
 <script>
+    // ========== APPLICATION STATE & INITIALIZATION ==========
     localStorage.removeItem('crhp_print_exchange');
 
     window.onload = function() {
@@ -179,6 +179,7 @@
         else showWaitingState();
     };
 
+    // ========== EVENT LISTENERS ==========
     window.addEventListener('message', function(event) {
         if (event.data && event.data.type === 'PRINT_DATA') {
             const payload = event.data.payload;
@@ -193,6 +194,7 @@
         }
     });
 
+    // ========== RENDERING FUNCTIONS ==========
     function forceRender(payload) {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
@@ -204,61 +206,6 @@
                 }, 50); 
             });
         });
-    }
-
-    function showWaitingState() {
-        document.body.classList.add('data-ready');
-        document.getElementById('output').innerHTML = `
-            <div class="no-print" style="text-align:center; padding:50px; color:#64748b; font-style:italic;">
-                Waiting for data from the Viewer or a manual upload...
-            </div>`;
-    }
-
-    function resetPrintView() {
-        localStorage.removeItem('crhp_print_exchange');
-        location.reload(); 
-    }
-
-    function manualLoad(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        document.getElementById('throbber').style.display = 'flex';
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            setTimeout(() => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    render(data);
-                    localStorage.setItem('crhp_print_exchange', JSON.stringify(data));
-                } catch(err) {
-                    showError("Invalid JSON file.");
-                }
-                document.getElementById('throbber').style.display = 'none';
-            }, 50);
-        };
-        reader.readAsText(file);
-    }
-
-    function showError(msg) {
-        document.getElementById('output').innerHTML = `<div class="no-print" style="border-left-color:red">${msg}</div>`;
-    }
-
-    function getMinutes(timeVal) {
-        if (typeof timeVal === 'number') return timeVal;
-        if (typeof timeVal === 'string' && timeVal.includes(':')) {
-            const timePart = timeVal.includes(' ') ? timeVal.split(' ')[1] : timeVal;
-            const [h, m] = timePart.split(':').map(Number);
-            return (h * 60) + m;
-        }
-        return 0;
-    }
-
-    function getDisplayTime(min) {
-        let h = Math.floor(min / 60);
-        const m = min % 60;
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        return `${h}:${m.toString().padStart(2, '0')} ${ampm}`;
     }
 
     function render(data) {
@@ -370,6 +317,64 @@
         document.getElementById('output').innerHTML = html;
         document.getElementById('throbber').style.display = 'none';
         document.body.classList.add('data-ready');
+    }
+
+    // ========== UI MANAGEMENT ==========
+    function showWaitingState() {
+        document.body.classList.add('data-ready');
+        document.getElementById('output').innerHTML = `
+            <div class="no-print" style="text-align:center; padding:50px; color:#64748b; font-style:italic;">
+                Waiting for data from the Viewer or a manual upload...
+            </div>`;
+    }
+
+    function resetPrintView() {
+        localStorage.removeItem('crhp_print_exchange');
+        location.reload(); 
+    }
+
+    function showError(msg) {
+        document.getElementById('output').innerHTML = `<div class="no-print" style="border-left-color:red">${msg}</div>`;
+    }
+
+    // ========== FILE HANDLING ==========
+    function manualLoad(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('throbber').style.display = 'flex';
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setTimeout(() => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    render(data);
+                    localStorage.setItem('crhp_print_exchange', JSON.stringify(data));
+                } catch(err) {
+                    showError("Invalid JSON file.");
+                }
+                document.getElementById('throbber').style.display = 'none';
+            }, 50);
+        };
+        reader.readAsText(file);
+    }
+
+    // ========== UTILITY FUNCTIONS ==========
+    function getMinutes(timeVal) {
+        if (typeof timeVal === 'number') return timeVal;
+        if (typeof timeVal === 'string' && timeVal.includes(':')) {
+            const timePart = timeVal.includes(' ') ? timeVal.split(' ')[1] : timeVal;
+            const [h, m] = timePart.split(':').map(Number);
+            return (h * 60) + m;
+        }
+        return 0;
+    }
+
+    function getDisplayTime(min) {
+        let h = Math.floor(min / 60);
+        const m = min % 60;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${h}:${m.toString().padStart(2, '0')} ${ampm}`;
     }
 </script>
 </body>

@@ -5,54 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRHP Scheduler</title>
     <style>
+        /* ========== THEME & ROOT ========== */
         :root {
             --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
             --bg-task: #a855f7; --text: #f8fafc; --danger: #ef4444;
-            --border: #475569; --now: #ff4747;
-			--room: #f59e0b;
+            --border: #475569; --now: #ff4747; --room: #f59e0b;
         }
+
+        /* ========== BASE STYLES ========== */
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         body.modal-open { overflow: hidden; height: 100vh; }
 
+        /* ========== LAYOUT & CONTAINERS ========== */
         .fixed-top { padding: 15px; max-width: 600px; margin: 0 auto; background: var(--bg); }
-        .section-title { font-size: 0.8rem; color: var(--accent); font-weight: bold; margin: 15px 0 5px; text-transform: uppercase; }
         .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; }
-        
         .btn-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        .scroll-wrapper { width: 100%; overflow-x: auto; border-top: 1px solid var(--border); }
+        .timeline-container { position: relative; width: 890px; margin: 0 auto; padding-right: 0; box-sizing: border-box; background: var(--bg); }
+
+        /* ========== TYPOGRAPHY & TEXT ========== */
+        .section-title { font-size: 0.8rem; color: var(--accent); font-weight: bold; margin: 15px 0 5px; text-transform: uppercase; }
+        .time-range { font-size: 8px; opacity: 0.7; font-weight: bold; line-height: 1; margin-bottom: 2px; }
+        .assigned-label { font-weight: bold; text-transform: uppercase; font-size: 7px; display: block; }
+
+        /* ========== FORMS & INPUTS ========== */
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 16px; box-sizing: border-box; }
+        select { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; font-weight: 500; color: var(--text); background-color: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2338bdf8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; }
+        select option { font-family: -apple-system, sans-serif; background: #1e293b; color: white; }
+        #taskRoom option[value=""], #editTaskRoom option[value=""] { color: #94a3b8; font-style: italic; }
+
+        /* ========== BUTTONS & CONTROLS ========== */
+        button { cursor: pointer; }
+        button:active { opacity: 0.8; }
         .btn-ctrl { flex: 1; padding: 12px; font-size: 0.75rem; font-weight: bold; border-radius: 6px; border: 1px solid var(--border); background: #1e293b; color: #cbd5e1; cursor: pointer; }
 
+        /* ========== DAY CONTROLS ========== */
         .day-container { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
         .day-btn { position: relative; padding: 8px 32px 8px 16px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: white; cursor: pointer; white-space: nowrap; font-size: 0.8rem; display: flex; align-items: center; }
         .day-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: bold; }
-        
-        .checklist-toggle { background: #1e293b; border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
-        .checklist-toggle.active { background: var(--accent); color: #0f172a; }
-
         .day-delete-x { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--danger); font-size: 14px; font-weight: bold; }
         .day-add { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; font-size: 0.8rem; font-weight: bold; }
 
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 16px; box-sizing: border-box; }
-        
+        /* ========== CHECKLIST TOGGLE ========== */
+        .checklist-toggle { background: #1e293b; border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
+        .checklist-toggle.active { background: var(--accent); color: #0f172a; }
+
+        /* ========== ROSTER & ROOMS ========== */
         .roster-grid { display: grid; grid-template-columns: 1fr; gap: 2px; max-height: 180px; overflow-y: auto; background: #0f172a; padding: 4px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px; }
         .roster-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; background: rgba(255,255,255,0.03); cursor: pointer; }
         .roster-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
         .roster-item small, #rosterDisplay small { color: var(--accent); font-weight: bold; }
 
-        .scroll-wrapper { 
-            width: 100%; 
-            overflow-x: auto; 
-            border-top: 1px solid var(--border); 
-        }
-
-        .timeline-container { 
-            position: relative; 
-            width: 890px;      /* Your chosen "sweet spot" width */
-            margin: 0 auto;    
-            padding-right: 0; 
-            box-sizing: border-box;
-            background: var(--bg);
-        }
-        
+        /* ========== CHECKLIST ITEMS ========== */
         .checklist-container { max-width: 600px; margin: 20px auto; padding: 0 15px; display: none; }
         .check-item { background: var(--card); border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 10px; position: relative; cursor: pointer; padding-right: 20px; }
         .check-item.is-pending { border: 2px dashed var(--accent) !important; }
@@ -61,62 +65,31 @@
         .check-del { position: absolute; top: 12px; right: 15px; color: var(--danger); font-weight: bold; cursor: pointer; z-index: 10; font-size: 18px; }
         .check-status-row { position: absolute; right: 45px; top: 12px; display: flex; gap: 5px; }
 
+        /* ========== TIMELINE & TASK STYLES ========== */
         .main-node.is-pending { border: 2px dashed var(--accent) !important; }
         .bg-node.is-pending { border: 2px dashed var(--bg-task) !important; }
         .task-node.is-complete { opacity: 0.5; background: repeating-linear-gradient(45deg, rgba(30,41,59,1), rgba(30,41,59,1) 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px) !important; }
-
         .status-header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0px; }
         .status-toggles { display: flex; gap: 3px; background: rgba(0,0,0,0.2); padding: 2px; border-radius: 4px; flex-shrink: 0; }
         .tiny-toggle { width: 18px; height: 18px; border: 1px solid white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; transition: 0.1s; background: rgba(0,0,0,0.4); color: white; cursor: pointer; }
         .tiny-toggle.active { background: white; color: black; }
 
+        /* ========== TIMELINE LAYOUT ========== */
         .v-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); z-index: 40; pointer-events: none; }
         .l-80 { left: 60px; }
         .l-430 { left: 410px; }
         .l-510 { left: 490px; }
         .l-860 { left: 840px; }
-
         .lane-header { position: absolute; top: 0; display: flex; z-index: 30; background: var(--bg); height: 35px; align-items: center; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: bold; }
         .header-main { left: 60px; width: 350px; justify-content: center; color: var(--accent); }
         .header-bg { left: 490px; width: 350px; justify-content: center; color: var(--bg-task); }
 
-        .time-gutter { 
-            position: absolute; 
-            top: 0; 
-            width: 60px; 
-            bottom: 0; 
-            background: var(--bg); /* Ensure this matches your background color exactly */
-            z-index: 30; /* Higher than both hour-lines and now-line */
-        }
+        /* ========== TIME GUTTERS ========== */
+        .time-gutter { position: absolute; top: 0; width: 60px; bottom: 0; background: var(--bg); z-index: 30; }
         .left-gutter { left: 0; }
-        .center-gutter { 
-            left: 410px; /* (60 gutter + 350 main) */
-            width: 80px; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 30;
-            background: var(--bg);
-        }
-
-        .hour-mark { 
-            position: absolute; 
-            left: 0;
-            right: 0;
-            width: 100%;
-            text-align: center; /* This centers text inside a full-width block */
-            transform: translateY(-50%); 
-            /* Remove any left: 50% or translate(-50%) if using this method */
-            font-size: 9px; 
-            font-weight: bold; 
-            color: #cbd5e1; 
-        }
-
-		.ultra-compact-text {
-			line-height: 1;
-			display: flex;
-			align-items: center;
-			gap: 4px;
+        .center-gutter { left: 410px; width: 80px; display: flex; flex-direction: column; align-items: center; z-index: 30; background: var(--bg); }
+        .hour-mark { position: absolute; left: 0; right: 0; width: 100%; text-align: center; transform: translateY(-50%); font-size: 9px; font-weight: bold; color: #cbd5e1; }
+        .ultra-compact-text { line-height: 1; display: flex; align-items: center; gap: 4px; }
 		}
 		.uc-count { color: var(--accent); font-weight: bold; } /* Assigned amount color */
 		.uc-room { color: var(--room); font-weight: bold; }  /* Room color */
@@ -164,167 +137,43 @@
             border: 1px solid rgba(255,255,255,0.1); border-left: 5px solid; cursor: pointer; z-index: 5;
             display: flex; flex-direction: column; overflow: hidden;
         }
+        /* ========== TASK NODE STYLES ========== */
         .main-node { border-left-color: var(--accent); background: #1e2d45; }
         .bg-node { border-left-color: var(--bg-task); background: #281e45; }
-        
         .task-title { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; line-height: 1.2; }
-        .task-meta {
-			display: flex;
-			flex-direction: column;
-			justify-content: flex-start;
-			overflow: hidden;
-		}
+        .task-meta { display: flex; flex-direction: column; justify-content: flex-start; overflow: hidden; }
         .crew-list { font-size: 8px; opacity: 0.95; line-height: 1.1; margin-top: 2px; }
-		
-		select {
-			font-family: -apple-system, BlinkMacSystemFont, sans-serif; /* Matches body font */
-			font-size: 14px;
-			font-weight: 500;
-			color: var(--text);
-			background-color: #0f172a;
-			border: 1px solid #334155;
-			padding: 10px;
-			border-radius: 6px;
-			appearance: none; /* Removes default browser arrow for a cleaner look */
-			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2338bdf8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-			background-repeat: no-repeat;
-			background-position: right 10px center;
-			background-size: 16px;
-		}
-
-		/* 2. Style the 'No Room Assigned' and other options */
-		select option {
-			font-family: -apple-system, sans-serif;
-			background: #1e293b; /* Matches your card color */
-			color: white;
-		}
-
-		/* 3. Specific fix for the 'No Room Assigned' text specifically */
-		#taskRoom option[value=""], 
-		#editTaskRoom option[value=""] {
-			color: #94a3b8; /* Give the 'No Room' option a slightly muted/grey color */
-			font-style: italic;
-		}
-		
-		.room-label { color: var(--room); font-weight: bold; }
-		.task-title .room-label { margin-left: 5px; font-size: 0.85em; }
-        
         .main-node .crew-list small, .checklist-container .crew-list small { color: var(--accent); font-weight: bold; }
         .bg-node .crew-list small { color: var(--bg-task); font-weight: bold; }
-        .assigned-label { font-weight: bold; text-transform: uppercase; font-size: 7px; display: block; }
         .main-node .assigned-label, .checklist-container .assigned-label { color: var(--accent); }
         .bg-node .assigned-label { color: var(--bg-task); }
-        
-        .time-range { font-size: 8px; opacity: 0.7; font-weight: bold; line-height: 1; margin-bottom: 2px; }
+        .room-label { color: var(--room); font-weight: bold; }
+        .task-title .room-label { margin-left: 5px; font-size: 0.85em; }
 
+        /* ========== MODAL STYLES ========== */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
-
-        /* 1. First, make sure the overlay (background) is scrollable */
-        #taskModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            z-index: 9999;
-            overflow-y: auto; /* This enables the "page" scroll */
-            padding: 20px 0 200px 0;   /* Gives space at top/bottom when scrolling */
-        }
-
-        /* 2. Update the modal-content to remove the centering anchor */
-        .modal-content {
-            position: relative; /* Change from fixed to relative */
-            margin: 0 auto 40px auto;    /* Centers horizontally */
-            background: var(--card);
-            padding: 25px;
-            border-radius: 16px;
-            border: 1px solid var(--accent);
-            width: 88%;
-            max-width: 400px;
-            /* Remove top/left/transform */
-            /* Remove max-height/overflow-y here so the WHOLE modal scrolls */
-        }
-
+        #taskModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: none; z-index: 9999; overflow-y: auto; padding: 20px 0 200px 0; }
+        .modal-content { position: relative; margin: 0 auto 40px auto; background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid var(--accent); width: 88%; max-width: 400px; }
         .modal-cancel-x { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 20px; font-weight: bold; cursor: pointer; }
         .toggle-btn { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: none; color: #94a3b8; font-weight: bold; cursor: pointer; }
         .toggle-btn.active-main { border-color: var(--accent); color: var(--accent); background: rgba(56, 189, 248, 0.1); }
         .toggle-btn.active-bg { border-color: var(--bg-task); color: var(--bg-task); background: rgba(168, 85, 247, 0.1); }
-		
-		@media (min-width: 1024px) {
-		body {
-			zoom: 1.7; /* Automates the 170% zoom you've been doing manually */
-			}
-		.fixed-top {
-			max-width: 1000px; /* Wider headers for desktop */
-			}
-		}
 
-        /* Styling for the read-only instructions area */
-        .help-content {
-            background: rgba(15, 23, 42, 0.5);
-            border-radius: 8px;
-            padding: 15px;
-            max-height: 350px;
-            overflow-y: auto;
-            font-size: 0.85rem;
-            line-height: 1.6;
-            color: #cbd5e1;
-            border: 1px solid #334155;
-        }
-
+        /* ========== HELP & SUPPORT STYLES ========== */
+        .help-content { background: rgba(15, 23, 42, 0.5); border-radius: 8px; padding: 15px; max-height: 350px; overflow-y: auto; font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; border: 1px solid #334155; }
         .help-content b { color: var(--accent); }
         .help-content ul { padding-left: 20px; margin: 10px 0; }
         .help-content li { margin-bottom: 8px; }
+        .btn-help { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+        .btn-help:hover { background: rgba(56, 189, 248, 0.1); }
+        .btn-link { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; transition: background 0.2s; }
+        .btn-link:hover { background: rgba(56, 189, 248, 0.1); }
 
-        /* Help Button (Circle) */
-        .btn-help {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 1px solid var(--accent);
-            /* Change background from 0.1 to transparent */
-            background: transparent; 
-            color: var(--accent);
-            font-weight: bold;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            /* Add transition so it matches the link button's smoothness */
-            transition: background 0.2s;
+        /* ========== RESPONSIVE DESIGN ========== */
+        @media (min-width: 1024px) {
+            body { zoom: 1.7; }
+            .fixed-top { max-width: 1000px; }
         }
-
-        /* Add this new hover state */
-        .btn-help:hover {
-            background: rgba(56, 189, 248, 0.1);
-        }
-
-        /* Link Button Style */
-        .btn-link {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%; /* Matches the help button shape */
-            border: 1px solid var(--accent);
-            background: transparent;
-            color: var(--accent);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none; /* Removes underline from <a> tag */
-            flex-shrink: 0;
-            transition: background 0.2s;
-        }
-
-        .btn-link:hover {
-            background: rgba(56, 189, 248, 0.1);
-        }
-
-        /* Icon sizing */
         .btn-link svg {
             width: 20px;
             height: 20px;
@@ -418,70 +267,20 @@
         }
 
         /* Buttons */
+        /* ========== BUTTON STYLES ========== */
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
-
-        .modal-btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.95rem;
-        }
-
-        /* Primary Button (Confirm) */
-        .btn-primary { 
-            background: var(--accent); 
-            color: #0f172a; /* Dark text on light blue background for pop */
-            border: none; 
-        }
-        .btn-primary:hover { 
-            background: #7dd3fc; /* Brighter blue on hover */
-            transform: translateY(-1px);
-        }
-
-        /* Secondary Button (Cancel) */
-        .btn-secondary { 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            color: #94a3b8; 
-        }
-        .btn-secondary:hover { 
-            background: rgba(255, 255, 255, 0.1); 
-            color: #f1f5f9;
-        }
-
-        /* Special Warning Style (Optional) */
+        .modal-btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 0.95rem; }
+        .btn-primary { background: var(--accent); color: #0f172a; border: none; }
+        .btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); color: #f1f5f9; }
         .modal-box.warning { border-top-color: #f87171; }
         .modal-box.warning .btn-primary { background: #f87171; color: white; }
 
-		/* Container for each checkbox + label pair */
-		.status-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-		}
-		
-		/* Make checkboxes slightly larger and easier to click on Mac */
-		.status-row input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin: 0;
-            cursor: pointer;
-		}
-		
-		.status-row label {
-            font-size: 0.95rem;
-            font-weight: 500;
-            margin: 0;
-            cursor: pointer;
-            flex: 1;
-		}
+        /* ========== FORM ELEMENTS & STATUS ========== */
+        .status-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; cursor: pointer; }
+        .status-row input[type="checkbox"] { width: 20px; height: 20px; margin: 0; cursor: pointer; }
+        .status-row label { font-size: 0.95rem; font-weight: 500; margin: 0; cursor: pointer; flex: 1; }
 
     </style>
 </head>
@@ -693,6 +492,7 @@
 </div>
 
 <script>
+    // ========== APPLICATION STATE ==========
     let tasks = JSON.parse(localStorage.getItem('v50_tasks')) || [];
     let checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
     let roster = JSON.parse(localStorage.getItem('v50_roster')) || [];
@@ -700,6 +500,7 @@
     let currentDay = 1, mode = 'main', editMode = 'main', activeTaskIndex = null, isChecklistMode = false, cachedDStart = 0;
 	let rooms = JSON.parse(localStorage.getItem('v50_rooms')) || [];
 
+    // ========== UTILITIES & HELPERS ==========
     const saveAll = () => { 
         localStorage.setItem('v50_tasks', JSON.stringify(tasks)); 
         localStorage.setItem('v50_checklist', JSON.stringify(checklist));
@@ -708,14 +509,25 @@
 		localStorage.setItem('v50_rooms', JSON.stringify(rooms));
     };
 	
-    const MASTER_TEMPLATE = `{"tasks":[{"day":1,"start":"09:00","end":"09:30","name":"Reconciliation Witness","desc":"Jacob gives reconciliation witness.","people":["Jacob (Facilities leader)"],"type":"main","complete":false,"pending":false},{"day":1,"start":"08:30","end":"09:00","name":"Breakfast","desc":"Breakfast and fellowship","people":[],"type":"main","pending":false,"complete":false,"room":""},{"day":1,"start":"08:45","end":"09:00","name":"Pray with witness","desc":"Thomas pray with Jacob in chapel","people":["Jacob (Facilities leader)","Thomas (Formation leader)"],"type":"bg","pending":false,"complete":false,"room":"Chapel"},{"day":1,"start":"08:30","end":"09:30","name":"Sacristan duties","desc":"Jonathan has to pick up priest","people":["Jonathan (Sacristan)"],"type":"bg","complete":false,"pending":false,"room":"Chapel"},{"day":1,"start":"10:00","end":"10:05","name":"Break","desc":"Get up, bathroom, snacks, water","people":["Jacob (Facilities leader)","Jonathan (Sacristan)","Thomas (Formation leader)"],"type":"main","pending":false,"complete":false,"room":"Any"},{"day":1,"start":"22:00","end":"23:59","name":"Now line tester","desc":"","people":[],"type":"main","room":"","pending":false,"complete":false}],"checklist":[{"name":"Test bro","desc":"Yo ","people":["Jacob (Facilities leader)"],"done":false,"pending":false}],"roster":[{"name":"Jacob","role":"Facilities leader"},{"name":"Jonathan","role":"Sacristan"},{"name":"Thomas","role":"Formation leader"}],"rooms":["Chapel","Any"],"totalDays":1}`;
+    const formatTo12h = (t) => { 
+        if(!t) return ""; 
+        let [h, m] = t.split(':').map(Number); 
+        return `${h % 12 || 12}:${m.toString().padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`; 
+    };
 
-    // 1. Initial attempt to load from storage
+    const getMins = (t) => { 
+        let [h, m] = t.split(':').map(Number); 
+        return (h * 60) + m; 
+    };
+
+    // ========== MASTER TEMPLATE & INITIALIZATION ==========
+	const MASTER_TEMPLATE = `{"tasks":[{"day":1,"start":"09:00","end":"09:30","name":"Reconciliation Witness","desc":"Jacob gives reconciliation witness.","people":["Jacob (Facilities leader)"],"type":"main","complete":false,"pending":false},{"day":1,"start":"08:30","end":"09:00","name":"Breakfast","desc":"Breakfast and fellowship","people":[],"type":"main","pending":false,"complete":false,"room":""},{"day":1,"start":"08:45","end":"09:00","name":"Pray with witness","desc":"Thomas pray with Jacob in chapel","people":["Jacob (Facilities leader)","Thomas (Formation leader)"],"type":"bg","pending":false,"complete":false,"room":"Chapel"},{"day":1,"start":"08:30","end":"09:30","name":"Sacristan duties","desc":"Jonathan has to pick up priest","people":["Jonathan (Sacristan)"],"type":"bg","complete":false,"pending":false,"room":"Chapel"},{"day":1,"start":"10:00","end":"10:05","name":"Break","desc":"Get up, bathroom, snacks, water","people":["Jacob (Facilities leader)","Jonathan (Sacristan)","Thomas (Formation leader)"],"type":"main","pending":false,"complete":false,"room":"Any"},{"day":1,"start":"22:00","end":"23:59","name":"Now line tester","desc":"","people":[],"type":"main","room":"","pending":false,"complete":false}],"checklist":[{"name":"Test bro","desc":"Yo ","people":["Jacob (Facilities leader)"],"done":false,"pending":false}],"roster":[{"name":"Jacob","role":"Facilities leader"},{"name":"Jonathan","role":"Sacristan"},{"name":"Thomas","role":"Formation leader"}],"rooms":["Chapel","Any"],"totalDays":1}`;
+
+    // Initialize data from localStorage or load Master Template
     let rawTasks = localStorage.getItem('v50_tasks');
     let rawRoster = localStorage.getItem('v50_roster');
     let rawRooms = localStorage.getItem('v50_rooms');
 
-    // 2. The Logic: If there's no roster OR no tasks, load the Master Template
     if (!rawRoster || !rawTasks || !rawRooms) {
         console.log("No saved data found. Loading Master Template...");
         const data = JSON.parse(MASTER_TEMPLATE);
@@ -726,10 +538,8 @@
         rooms = data.rooms;
         totalDays = data.totalDays || 1;
         
-        // Save immediately so the next refresh sees the data
         saveAll();
     } else {
-        // 3. Data exists! Parse it into our active variables
         tasks = JSON.parse(rawTasks);
         checklist = JSON.parse(localStorage.getItem('v50_checklist')) || [];
         roster = JSON.parse(rawRoster);
@@ -737,31 +547,24 @@
         totalDays = parseInt(localStorage.getItem('v50_days')) || 1;
     }
 
+    // ========== VIEW & MODE MANAGEMENT ==========
     function activateChecklist() { isChecklistMode = true; updateViewToggles(); renderDays(); renderChecklist(); }
     function activateDay(day) { isChecklistMode = false; currentDay = day; updateViewToggles(); renderDays(); renderTasks(); }
 
-    function updateNowLine() {
-        if(isChecklistMode) return;
-        const line = document.getElementById('nowLine');
-        const now = new Date();
-        const nowMins = (now.getHours() * 60) + now.getMinutes();
-        const pos = (nowMins - cachedDStart) * 3 + 35;
-        
-        document.querySelectorAll('.now-time-indicator').forEach(el => el.remove());
-
-        if (pos > 35 && pos < document.getElementById('timelineArea').offsetHeight) {
-            line.style.top = pos + 'px'; 
-            line.style.display = 'block';
-            
-            const timeStr = formatTo12h(`${now.getHours()}:${now.getMinutes()}`);
-            const indicatorHtml = `<div class="now-time-indicator" style="top:${pos}px">${timeStr}</div>`;
-            document.getElementById('leftGutter').insertAdjacentHTML('beforeend', indicatorHtml);
-            document.getElementById('centerGutter').insertAdjacentHTML('beforeend', indicatorHtml);
-        } else { 
-            line.style.display = 'none'; 
+    function updateViewToggles() {
+        const timeline = document.getElementById('timelineView'), checkView = document.getElementById('checklistView');
+        const timeInputs = document.getElementById('timeInputs'), laneToggle = document.getElementById('laneToggle');
+        const creatorTitle = document.getElementById('creatorTitle'), btn = document.getElementById('checkToggle');
+        if(isChecklistMode) {
+            timeline.style.display = 'none'; checkView.style.display = 'block'; timeInputs.style.display = 'none';
+            laneToggle.style.display = 'none'; creatorTitle.innerHTML = '2. Task Creator (Global Checklist)'; btn.classList.add('active');
+        } else {
+            timeline.style.display = 'block'; checkView.style.display = 'none'; timeInputs.style.display = 'flex';
+            laneToggle.style.display = 'flex'; creatorTitle.innerHTML = `2. Task Creator (Day ${currentDay})`; btn.classList.remove('active');
         }
     }
 
+    // ========== STATUS & DATA MODIFICATION ==========
     function toggleStatus(index, type, event) {
         event.stopPropagation();
         const t = tasks[index];
@@ -778,19 +581,7 @@
         saveAll(); renderChecklist();
     }
 
-    function updateViewToggles() {
-        const timeline = document.getElementById('timelineView'), checkView = document.getElementById('checklistView');
-        const timeInputs = document.getElementById('timeInputs'), laneToggle = document.getElementById('laneToggle');
-        const creatorTitle = document.getElementById('creatorTitle'), btn = document.getElementById('checkToggle');
-        if(isChecklistMode) {
-            timeline.style.display = 'none'; checkView.style.display = 'block'; timeInputs.style.display = 'none';
-            laneToggle.style.display = 'none'; creatorTitle.innerHTML = '2. Task Creator (Global Checklist)'; btn.classList.add('active');
-        } else {
-            timeline.style.display = 'block'; checkView.style.display = 'none'; timeInputs.style.display = 'flex';
-            laneToggle.style.display = 'flex'; creatorTitle.innerHTML = `2. Task Creator (Day ${currentDay})`; btn.classList.remove('active');
-        }
-    }
-
+    // ========== RENDERING FUNCTIONS ==========
     function renderChecklist() {
         const container = document.getElementById('checklistItems');
         container.innerHTML = checklist.map((item, i) => {
@@ -812,6 +603,7 @@
         }).join('');
     }
 
+    // ========== MODAL MANAGEMENT ==========
     function openModal(index, fromChecklist = false) {
         activeTaskIndex = index; 
         document.body.classList.add('modal-open');
@@ -832,10 +624,7 @@
             document.getElementById('editStartTime').value = t.start;
             document.getElementById('editEndTime').value = t.end;
             
-            // --- CHANGED: Use renderEditRooms instead of setting value ---
-            // Checks for t.rooms array first, falls back to legacy t.room string
             renderEditRooms(t.rooms || t.room); 
-
             setEditMode(t.type || 'main');
         }
         
