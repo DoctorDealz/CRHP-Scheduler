@@ -950,30 +950,35 @@
             checklist.push({ name: n, desc: d, people: p, done: false, pending: false });
         } else {
             let s = document.getElementById('startTime').value, e = document.getElementById('endTime').value;
-            if (e === "00:00") { e = "23:59"; }
             
+            // 1. If end is midnight, cap it at 11:59 PM of the SAME day
+            if (e === "00:00" || e === "24:00") { 
+                e = "23:59"; 
+            }
+            
+            // 2. Now check if it actually crosses into the next day
+            // This only triggers if the user specifically picked an end time 
+            // like 01:00 AM for a 10:00 PM start.
             if(getMins(e) < getMins(s)) {
                 // Task crosses midnight - Day 1
                 tasks.push({ 
                     day: currentDay, start: s, end: "23:59", name: n, desc: d, people: p, type: mode, 
-                    rooms: selectedRooms, // Array
-                    room: roomStr,        // String
+                    rooms: selectedRooms, room: roomStr, 
                     pending: false, complete: false 
                 });
                 if (currentDay === totalDays) { totalDays++; renderDays(); }
+                
                 // Task crosses midnight - Day 2
                 tasks.push({ 
                     day: currentDay + 1, start: "00:00", end: e, name: n, desc: d, people: p, type: mode, 
-                    rooms: selectedRooms, // Array
-                    room: roomStr,        // String
+                    rooms: selectedRooms, room: roomStr, 
                     pending: false, complete: false 
                 });
             } else {
-                // Standard single day
+                // Standard single day (Midnight is now 23:59, so it lands here)
                 tasks.push({ 
                     day: currentDay, start: s, end: e, name: n, desc: d, people: p, type: mode, 
-                    rooms: selectedRooms, // Array
-                    room: roomStr,        // String
+                    rooms: selectedRooms, room: roomStr, 
                     pending: false, complete: false 
                 });
             }
