@@ -234,23 +234,18 @@
         }
 
         /* 2. Update the modal-content to remove the centering anchor */
-/* Fix for jumping textarea during resize */
-.modal-content textarea {
-    resize: vertical;      /* Prevents horizontal stretching which breaks layouts */
-    min-height: 80px;      /* Set a reasonable starting point */
-    max-height: 300px;     /* Prevents the modal from growing off-screen */
-    display: block;        /* Takes it out of the inline-flow */
-    width: 100%;           /* Keeps it filling the modal width */
-}
-
-/* Ensure the modal content doesn't fight the resize */
-.modal-content {
-    display: flex;
-    flex-direction: column;
-    height: auto;          /* Allows the modal to grow naturally */
-    max-height: 90vh;      /* Keeps the modal within the viewport */
-    overflow-y: auto;      /* Adds a scrollbar if the textarea gets too big */
-}
+        .modal-content {
+            position: relative; /* Change from fixed to relative */
+            margin: 0 auto 40px auto;    /* Centers horizontally */
+            background: var(--card);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--accent);
+            width: 88%;
+            max-width: 400px;
+            /* Remove top/left/transform */
+            /* Remove max-height/overflow-y here so the WHOLE modal scrolls */
+        }
 
         .modal-cancel-x { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 20px; font-weight: bold; cursor: pointer; }
         .toggle-btn { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: none; color: #94a3b8; font-weight: bold; cursor: pointer; }
