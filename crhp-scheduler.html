@@ -708,7 +708,7 @@
 		localStorage.setItem('v50_rooms', JSON.stringify(rooms));
     };
 	
-    async function initApp() {
+    async function initTemplateApp() {
         // 1. Initial attempt to load from storage
         let rawTasks = localStorage.getItem('v50_tasks');
         let rawRoster = localStorage.getItem('v50_roster');
@@ -753,7 +753,7 @@
     }
 
     // Start the application
-    initApp();
+    initTemplateApp();
 
     function activateChecklist() { isChecklistMode = true; updateViewToggles(); renderDays(); renderChecklist(); }
     function activateDay(day) { isChecklistMode = false; currentDay = day; updateViewToggles(); renderDays(); renderTasks(); }
