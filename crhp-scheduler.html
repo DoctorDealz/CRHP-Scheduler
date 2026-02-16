@@ -2084,16 +2084,28 @@
 
 
     // This is the trigger that actually starts the engine
-    window.addEventListener('DOMContentLoaded', () => {
-        console.log("DOM Ready. Starting initApp...");
-        initApp();
+    window.addEventListener('DOMContentLoaded', async () => {
+        console.log("DOM Ready. Starting Template Loader...");
+        
+        // 1. Wait for the template (or local storage) to finish loading
+        await initTemplateApp(); 
+        
+        // 2. Start the background logic
+        setInterval(updateNowLine, 30000);
+        updateNowLine(); // Run once immediately
+        
+        // 3. Set the initial UI state
+        setMode('main');
+        
+        // 4. Run your other init logic (if you have an initApp function)
+        if (typeof initApp === 'function') initApp();
+        
+        console.log("App Fully Initialized.");
     });
 
-    setInterval(updateNowLine, 30000);
     renderRoster();
 	renderDays();
 	renderTasks();
-	setMode('main');
 	renderRooms();
 </script>
 </body>
